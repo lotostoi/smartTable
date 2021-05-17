@@ -18,10 +18,11 @@
           class="img"
           alt="img"
           :ref="img.ref"
-          v-touch:press="start()"
-          v-touch:drag="move()"
+          @mousedown="start($event)"
+          @mousemove="move($event)"
+          @touchstart="start($event)"
+          @touchmove="move($event)"
           v-touch:release="() => drop()"
-          @mousemove="() => {}"
           :draggable="false"
         />
       </div>
@@ -62,26 +63,22 @@ export default {
     dragOff() {
       return false;
     },
-    start() {
-      return (e) => {
-        this.element = {};
-        this.element.el = e.target;
-        this.element.x = this.getCoords(this.element.el).left;
-        this.element.y = this.getCoords(this.element.el).top;
-      };
+    start(e) {
+      this.element = {};
+      this.element.el = e.target;
+      this.element.x = this.getCoords(this.element.el).left;
+      this.element.y = this.getCoords(this.element.el).top;
     },
-    move() {
-      return (e) => {
-        console.log(e);
-        if (!this.element) return;
-        this.element.el.style.position = "absolute";
-        this.element.el.style.zIndex = 1000;
-        this.element.el.style.left =
-          e.changedTouches[0].pageX - this.element.el.offsetWidth / 2 + "px";
-        this.element.el.style.top =
-          e.changedTouches[0].pageY - this.element.el.offsetHeight / 2 + "px";
-        if (e.changedTouches[0].pageY < this.dropAreaBottom / 1.5) this.drop();
-      };
+    move(e) {
+      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
+      if (!this.element) return;
+      this.element.el.style.position = "absolute";
+      this.element.el.style.zIndex = 1000;
+      this.element.el.style.left =
+        event.pageX - this.element.el.offsetWidth / 2 + "px";
+      this.element.el.style.top =
+        event.pageY - this.element.el.offsetHeight / 2 + "px";
+      if (event.pageY < this.dropAreaBottom / 1.5) this.drop();
     },
     drop() {
       if (!this.element) return;
