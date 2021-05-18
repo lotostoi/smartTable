@@ -1,28 +1,24 @@
 <template>
   <div class="wrapper">
-    <div
-      class="content"
-      @dragstart="dragOff"
-      :style="'padding-top: ' + dropAreaBottom + 'px;'"
-    >
+    <div class="content" @dragstart="dragOff" :style="heightDropArea">
       <div class="dropArea" ref="dropArea"></div>
       <div
         class="img num1"
         v-for="img in content"
         :key="img.url"
-        :style="'width: ' + size.width + 'px; height: ' + size.height + 'px;'"
+        :style="sizePicture"
       >
         <img
-          :style="'width: ' + size.width + 'px; height: ' + size.height + 'px;'"
+          :style="sizePicture"
           :src="img.url"
           class="img"
           alt="img"
           :ref="img.ref"
           @mousedown="start($event)"
-          @mousemove="move($event)"
+          @mousemove="move($event,img)"
           @touchstart="start($event)"
-          @touchmove="move($event)"
-          v-touch:release="() => drop()"
+          @touchmove="move($event,img)"
+          v-touch:release="() => drop(img)"
           :draggable="false"
         />
       </div>
@@ -31,14 +27,16 @@
 </template>
 
 <script>
+/* eslint-disable no-unused-vars */
+import { mapGetters } from "vuex";
+import { io } from "socket.io-client";
+const socket = io("http://localhost:3000/");
+
+/* eslint-enable no-unused-vars */
+
 export default {
   data() {
     return {
-      content: [
-        { url: require("@/assets/images/Thumb1.jpg"), ref: "img1" },
-        { url: require("@/assets/images/Thumb2.jpg"), ref: "img2" },
-        { url: require("@/assets/images/Thumb3.jpg"), ref: "img3" },
-      ],
       element: null,
       dropAreaBottom: 100,
       size: {},
@@ -69,7 +67,7 @@ export default {
       this.element.x = this.getCoords(this.element.el).left;
       this.element.y = this.getCoords(this.element.el).top;
     },
-    move(e) {
+    move(e, img) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       if (!this.element) return;
       this.element.el.style.position = "absolute";
@@ -78,15 +76,31 @@ export default {
         event.pageX - this.element.el.offsetWidth / 2 + "px";
       this.element.el.style.top =
         event.pageY - this.element.el.offsetHeight / 2 + "px";
-      if (event.pageY < this.dropAreaBottom / 1.5) this.drop();
+      if (event.pageY < this.dropAreaBottom / 1.5) {
+        socket.emit("change-page", img);
+        this.drop();
+      }
     },
     drop() {
-      if (!this.element) return;
+      if (!this.element ) return;
       this.element.el.style.left = this.element.x + "px";
       this.element.el.style.top = this.element.y + "px";
       this.element.el.style.position = "static";
       this.element.el.style.zIndex = 10;
       this.element = null;
+    },
+  },
+  computed: {
+    ...mapGetters({
+      content: "content/getContent",
+    }),
+    sizePicture() {
+      return (
+        "width: " + this.size.width + "px; height: " + this.size.height + "px;"
+      );
+    },
+    heightDropArea() {
+      return "padding-top: " + this.dropAreaBottom + "px;";
     },
   },
 };
@@ -110,6 +124,7 @@ export default {
   width: 100%;
   height: 15vh;
   border: 1px solid gray;
+  box-sizing: border-box;
 }
 .content {
   position: absolute;
@@ -121,6 +136,7 @@ export default {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  box-sizing: border-box;
   & > .img {
     width: 400px;
     height: 280px;

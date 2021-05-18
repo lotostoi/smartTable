@@ -1,26 +1,26 @@
-import { createRouter, createWebHistory } from "vue-router";
-import Home from "../views/Home.vue";
+import { createRouter, createWebHistory } from "vue-router"
+import RemoteController from "../views/RemoteController.vue"
+import SmartTable from "../views/SmartTable.vue"
 
 const routes = [
   {
     path: "/",
-    name: "Home",
-    component: Home,
+    name: "RemoteController",
+    component: RemoteController,
   },
   {
-    path: "/about",
-    name: "About",
+    path: "/table",
+    name: "table",
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/About.vue"),
+    component: SmartTable,
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
-});
+})
 
-export default router;
+export default router
