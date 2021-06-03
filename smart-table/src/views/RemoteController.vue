@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper">
+  <div class="wrapper" @mouseup="drop(img)" @touchend="drop(img)">
     <div class="content" @dragstart="dragOff" :style="heightDropArea">
       <div class="dropArea" ref="dropArea"></div>
       <div
@@ -15,10 +15,10 @@
           alt="img"
           :ref="img.ref"
           @mousedown="start($event)"
-          @mousemove="move($event,img)"
+          @mousemove="move($event, img)"
           @touchstart="start($event)"
-          @touchmove="move($event,img)"
-          v-touch:release="() => drop(img)"
+          @touchmove="move($event, img)"
+          @transitionend="endMove"
           :draggable="false"
         />
       </div>
@@ -31,7 +31,7 @@
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
 const socket = io("http://localhost:3000/");
-
+const debounce = require("debounce");
 /* eslint-enable no-unused-vars */
 
 export default {
@@ -40,6 +40,8 @@ export default {
       element: null,
       dropAreaBottom: 100,
       size: {},
+      track: [],
+      basePos: {},
     };
   },
   mounted() {
@@ -64,30 +66,66 @@ export default {
     start(e) {
       this.element = {};
       this.element.el = e.target;
-      this.element.x = this.getCoords(this.element.el).left;
-      this.element.y = this.getCoords(this.element.el).top;
+      this.element.x = this.basePos.x = this.getCoords(this.element.el).left;
+      this.element.y = this.basePos.y = this.getCoords(this.element.el).top;
+      this.startMove = new Date();
     },
-    move(e, img) {
+    move(e) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       if (!this.element) return;
+      console.log(this.element);
       this.element.el.style.position = "absolute";
       this.element.el.style.zIndex = 1000;
       this.element.el.style.left =
         event.pageX - this.element.el.offsetWidth / 2 + "px";
       this.element.el.style.top =
         event.pageY - this.element.el.offsetHeight / 2 + "px";
-      if (event.pageY < this.dropAreaBottom / 1.5) {
-        socket.emit("change-page", img);
-        this.drop();
+
+      this.track.push({
+        x: event.pageX - this.element.el.offsetWidth / 2,
+        y: event.pageY - this.element.el.offsetHeight / 2,
+        time: new Date(),
+      });
+    },
+    endMove(e) {
+      if (this.basePos) {
+        e.target.style.left = this.basePos.x + "px";
+        e.target.style.top = this.basePos.y + "px";
+
+        this.basePos = null;
+        //e.target.style.transform = `translate(${this.basePos.x}px,${this.basePos.y}px)`;
       }
     },
     drop() {
-      if (!this.element ) return;
-      this.element.el.style.left = this.element.x + "px";
+      if (!this.element) return;
+      /*       this.element.el.style.left = this.element.x + "px";
       this.element.el.style.top = this.element.y + "px";
       this.element.el.style.position = "static";
-      this.element.el.style.zIndex = 10;
+      this.element.el.style.zIndex = 10; */
+
+      this.calcRtac();
+    
       this.element = null;
+    },
+
+    calcRtac() {
+      if (this.track.length) {
+        let { x: x1, y: y1, time: time1 } =
+          this.track.length > 20
+            ? this.track[this.track.length - 10]
+            : this.track[0];
+        let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
+
+        let xLength, yLength, time;
+        xLength = x2 - x1;
+        yLength = y2 - y1;
+        time = time2 - time1;
+
+        this.element.el.style.transform = `translate(${
+          (xLength * 100) / time
+        }px,${(yLength * 100) / time}px)`;
+        this.track = [];
+      }
     },
   },
   computed: {
@@ -142,10 +180,12 @@ export default {
     height: 280px;
     border: 1px solid white;
     margin: 10px;
+    transition: transform 500ms;
   }
 }
 .img {
   width: 400px;
   height: 280px;
+  transition: transform 500ms ease-out;
 }
 </style>
