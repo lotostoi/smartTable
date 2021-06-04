@@ -8,7 +8,7 @@
       mode="out-in"
     >
       <div v-if="item.id === id">
-        <img  :src="item.url" alt="img" />
+        <img :src="item.url" alt="img" />
       </div>
     </transition-group>
   </div>
@@ -17,8 +17,7 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:3000/");
-
+const socket = io(process.env.NODE_ENV ==='development' ? "http://localhost:3000/" : "");
 /* eslint-enable no-unused-vars */
 
 export default {
@@ -44,7 +43,6 @@ export default {
   }
   to {
     z-index: 100;
-    
   }
 }
 
@@ -52,14 +50,13 @@ export default {
   from {
     z-index: 500;
     transform: scale(0);
-   // transform: translateY(100%);
-    
+    // transform: translateY(100%);
   }
 
   to {
     transform: scale(1);
     z-index: 500;
-   // transform: translateX(0);
+    // transform: translateX(0);
   }
 }
 .leave {

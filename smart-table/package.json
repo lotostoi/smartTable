@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "serve": "set NODE_ENV=development&& set NODE_PORT=3000&& vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "server": "nodemon src/server"
+    "server": "set NODE_ENV=development&& set NODE_PORT=3000&& nodemon src/server",
+    "start": "set NODE_ENV=production&& set NODE_PORT=3200&& nodemon src/server"
   },
   "dependencies": {
     "core-js": "^3.6.5",

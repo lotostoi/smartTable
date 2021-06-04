@@ -7,6 +7,9 @@
         v-for="img in content"
         :key="img.url"
         :style="sizePicture"
+        @mouseup="drop(img)"
+        @touchend="drop(img)"
+        :class="{ active: img.active }"
       >
         <img
           :style="sizePicture"
@@ -14,11 +17,12 @@
           class="img"
           alt="img"
           :ref="img.ref"
+          @mouseup="drop(img)"
           @mousedown="start($event)"
           @mousemove="move($event, img)"
           @touchstart="start($event)"
           @touchmove="move($event, img)"
-          @transitionend="endMove"
+          @transitionend="endMove($event, img)"
           :draggable="false"
         />
       </div>
@@ -30,8 +34,8 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:3000/");
-const debounce = require("debounce");
+const socket = io(process.env.NODE_ENV ==='development'  ? "http://localhost:3000/": '');
+
 /* eslint-enable no-unused-vars */
 
 export default {
@@ -41,7 +45,8 @@ export default {
       dropAreaBottom: 100,
       size: {},
       track: [],
-      basePos: {},
+      endFirstAnim: {},
+      lastTik: false,
     };
   },
   mounted() {
@@ -64,16 +69,17 @@ export default {
       return false;
     },
     start(e) {
+      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       this.element = {};
       this.element.el = e.target;
-      this.element.x = this.basePos.x = this.getCoords(this.element.el).left;
-      this.element.y = this.basePos.y = this.getCoords(this.element.el).top;
+      this.element.x = this.getCoords(this.element.el).left;
+      this.element.y = this.getCoords(this.element.el).top;
       this.startMove = new Date();
+      console.log(event.pageX, event.pageY);
     },
     move(e) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       if (!this.element) return;
-      console.log(this.element);
       this.element.el.style.position = "absolute";
       this.element.el.style.zIndex = 1000;
       this.element.el.style.left =
@@ -87,28 +93,36 @@ export default {
         time: new Date(),
       });
     },
-    endMove(e) {
-      if (this.basePos) {
-        e.target.style.left = this.basePos.x + "px";
-        e.target.style.top = this.basePos.y + "px";
-
-        this.basePos = null;
-        //e.target.style.transform = `translate(${this.basePos.x}px,${this.basePos.y}px)`;
+    endMove(e, img) {
+      console.log(e.target.offsetTop, e.target.clientHeight);
+      if (e.target.offsetTop + e.target.clientHeight < 0) {
+        socket.emit("change-page", img);
+        this.content.map((el) => {
+          if (el.id == img.id) {
+            el.active = true;
+          } else {
+            el.active = false;
+          }
+        });
+        e.target.style.display = "none";
+        setTimeout(() => {
+          e.target.style.display = "flex";
+        }, 1000);
       }
+      e.target.style.transition = "left 0ms ease-out, top 0ms ease-out";
+      e.target.style.position = "static";
+
+      this.element = null;
+      this.track = [];
     },
     drop() {
       if (!this.element) return;
-      /*       this.element.el.style.left = this.element.x + "px";
-      this.element.el.style.top = this.element.y + "px";
-      this.element.el.style.position = "static";
-      this.element.el.style.zIndex = 10; */
-
       this.calcRtac();
-    
-      this.element = null;
     },
 
     calcRtac() {
+      const endTime = new Date();
+
       if (this.track.length) {
         let { x: x1, y: y1, time: time1 } =
           this.track.length > 20
@@ -116,15 +130,22 @@ export default {
             : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
+        console.log(endTime - time2, "time");
         let xLength, yLength, time;
         xLength = x2 - x1;
         yLength = y2 - y1;
         time = time2 - time1;
 
-        this.element.el.style.transform = `translate(${
-          (xLength * 100) / time
-        }px,${(yLength * 100) / time}px)`;
-        this.track = [];
+        if (endTime - time2 < 20) {
+          this.element.el.style.transition =
+            "left 500ms ease-out, top 500ms ease-out";
+          this.element.el.style.left = `${x2 + (xLength * 100) / time}px`;
+          this.element.el.style.top = `${y2 + (yLength * 100) / time}px`;
+        } else {
+          this.element.el.style.transition =
+            "left 0ms ease-out, top 0ms ease-out";
+          this.element.el.style.position = "static";
+        }
       }
     },
   },
@@ -175,17 +196,19 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   box-sizing: border-box;
+  overflow: hidden;
+  border: 3px solid transparent;
   & > .img {
     width: 400px;
     height: 280px;
-    border: 1px solid white;
     margin: 10px;
-    transition: transform 500ms;
+  }
+  & > .active {
+    border: 2px solid white;
   }
 }
 .img {
   width: 400px;
   height: 280px;
-  transition: transform 500ms ease-out;
 }
 </style>
