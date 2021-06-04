@@ -1,0 +1,53 @@
+.body {
+  font-family: Arial;
+  width: 1280px;
+  margin: 0 auto;
+  border: 1px solid #000;
+  box-sizing: border-box;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 50px;
+  background-color: #445161;
+  box-sizing: border-box;
+  color: #fff;
+  padding-top: 25px;
+  /*   background-image: url(img/background\ img.png); */
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+.page-header-title {
+  margin: 0 0 40px 0;
+  font-size: 60px;
+  line-height: 69px;
+}
+
+.page-header-list {
+  padding: 0;
+  list-style-type: none;
+  font-size: 20px;
+  line-height: 23px;
+}
+.page-header-list li {
+  margin: 0 0 10px 0;
+  position: relative;
+  padding: 0 0 0 20px;
+  box-sizing: border-box;
+}
+.page-header-list li:before {
+  content: '';
+  display: block;
+  width: 15px;
+  height: 15px;
+  /*border: 2px solid red;
+    box-sizing: border-box;*/
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: url(..//lesson-1/img/Vector.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}

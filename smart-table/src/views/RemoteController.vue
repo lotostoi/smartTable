@@ -1,14 +1,13 @@
 <template>
-  <div class="wrapper" @mouseup="drop(img)" @touchend="drop(img)">
+  <div class="wrapper" @touchend="drop(img)"  @mouseup="drop(img)">
     <div class="content" @dragstart="dragOff" :style="heightDropArea">
-      <div class="dropArea" ref="dropArea"></div>
       <div
         class="img num1"
         v-for="img in content"
         :key="img.url"
         :style="sizePicture"
-        @mouseup="drop(img)"
         @touchend="drop(img)"
+         @mouseup="drop(img)"
         :class="{ active: img.active }"
       >
         <img
@@ -34,7 +33,23 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io(process.env.NODE_ENV ==='development'  ? "http://localhost:3000/": '');
+const socket = io(
+  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "",
+);
+
+const debounce = function (f, ms) {
+  let isCooldown = false;
+
+  return function () {
+    if (isCooldown) return;
+
+    f.apply(this, arguments);
+
+    isCooldown = true;
+
+    setTimeout(() => (isCooldown = false), ms);
+  };
+};
 
 /* eslint-enable no-unused-vars */
 
@@ -46,7 +61,8 @@ export default {
       size: {},
       track: [],
       endFirstAnim: {},
-      lastTik: false,
+      isMous: false,
+      typeEvent: "touch",
     };
   },
   mounted() {
@@ -69,17 +85,19 @@ export default {
       return false;
     },
     start(e) {
-      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
+      this.isMous = true;
+      this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
       this.element = {};
       this.element.el = e.target;
       this.element.x = this.getCoords(this.element.el).left;
       this.element.y = this.getCoords(this.element.el).top;
       this.startMove = new Date();
-      console.log(event.pageX, event.pageY);
     },
     move(e) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
-      if (!this.element) return;
+      if (!this.element || !this.isMous) return;
+      console.log('move');
+      console.log(this.isMous);
       this.element.el.style.position = "absolute";
       this.element.el.style.zIndex = 1000;
       this.element.el.style.left =
@@ -94,7 +112,6 @@ export default {
       });
     },
     endMove(e, img) {
-      console.log(e.target.offsetTop, e.target.clientHeight);
       if (e.target.offsetTop + e.target.clientHeight < 0) {
         socket.emit("change-page", img);
         this.content.map((el) => {
@@ -116,7 +133,8 @@ export default {
       this.track = [];
     },
     drop() {
-      if (!this.element) return;
+      if (!this.element || !this.isMous) return;
+      this.isMous = false;
       this.calcRtac();
     },
 
@@ -130,17 +148,24 @@ export default {
             : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
+        console.log(this.track.length, 'length');
+
         console.log(endTime - time2, "time");
+     
         let xLength, yLength, time;
         xLength = x2 - x1;
         yLength = y2 - y1;
         time = time2 - time1;
 
+        console.log(time, "all time");
+
+        const k = this.typeEvent === "touch" ? 100 : 200;
+
         if (endTime - time2 < 20) {
           this.element.el.style.transition =
-            "left 500ms ease-out, top 500ms ease-out";
-          this.element.el.style.left = `${x2 + (xLength * 100) / time}px`;
-          this.element.el.style.top = `${y2 + (yLength * 100) / time}px`;
+            "left 500ms ease-out, top 500ms ease-out"; 
+          this.element.el.style.left = `${x2 + (xLength * k) / time}px`;
+          this.element.el.style.top = `${y2 + (yLength * k) / time}px`;
         } else {
           this.element.el.style.transition =
             "left 0ms ease-out, top 0ms ease-out";
@@ -171,26 +196,17 @@ export default {
   height: 100vh;
 }
 .wrapper {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   background-color: black;
   position: relative;
 }
-.dropArea {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 15vh;
-  border: 1px solid gray;
-  box-sizing: border-box;
-}
+
 .content {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: black;
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;

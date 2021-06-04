@@ -61,13 +61,13 @@ export default {
 }
 .leave {
   z-index: 100;
-  animation: leave-page 0.5s linear forwards;
+  animation: leave-page 0.3s linear forwards;
 }
 
 .enter {
   transform-origin: 50% 100% 0;
   z-index: 500;
-  animation: enter-page 0.5s linear forwards;
+  animation: enter-page 0.3s linear forwards;
 }
 
 .smart-table {
