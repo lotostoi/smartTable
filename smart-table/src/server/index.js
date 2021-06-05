@@ -17,7 +17,7 @@ const io = require('socket.io')(server, {
 })
 
 
-console.log(process.env.NODE_PORT);
+console.log(process.env.NODE_PORT, process.env.NODE_EVN);
 io.on('connection', socket => {
   console.log('a user connected')
 })
