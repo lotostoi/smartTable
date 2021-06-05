@@ -1,8 +1,8 @@
-const isDevelopment = process.env.NODE_EVN === 'development'
+const isDevelopment = process.env.NODE_NODE_ENV === 'development'
 console.log(isDevelopment)
 const history = require('connect-history-api-fallback')
 const path = require('path')
-const port = process.env.NODE_PORT || 3000
+const port = process.env.NODE_PORT || 3200
 const express = require('express')
 const app = express()
 const http = require('http')
@@ -17,7 +17,7 @@ const io = require('socket.io')(server, {
 })
 
 
-console.log(process.env.NODE_PORT, process.env.NODE_EVN);
+console.log(process.env.NODE_PORT, process.env.NODE_ENV);
 io.on('connection', socket => {
   console.log('a user connected')
 })
