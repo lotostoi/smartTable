@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router"
 import RemoteController from "../views/RemoteController.vue"
 import SmartTable from "../views/SmartTable.vue"
 
+
 const routes = [
   {
     path: "/",
@@ -13,6 +14,7 @@ const routes = [
     name: "table",
     component: SmartTable,
   },
+
 ]
 
 const router = createRouter({

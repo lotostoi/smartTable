@@ -214,6 +214,7 @@ export default {
   box-sizing: border-box;
   overflow: hidden;
   border: 3px solid transparent;
+  touch-action: none;
   & > .img {
     width: 400px;
     height: 280px;
