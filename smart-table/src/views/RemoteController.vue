@@ -1,13 +1,13 @@
 <template>
-  <div class="wrapper" @touchend="drop(img)"  @mouseup="drop(img)">
-    <div class="content" @dragstart="dragOff" :style="heightDropArea">
+  <div class="wrapper" @touchend="drop(img)" @mouseup="drop(img)">
+    <div class="content" @dragstart="dragOff"  v-touch:swipe.top="fullScreenOn" >
       <div
         class="img num1"
         v-for="img in content"
         :key="img.url"
         :style="sizePicture"
         @touchend="drop(img)"
-         @mouseup="drop(img)"
+        @mouseup="drop(img)"
         :class="{ active: img.active }"
       >
         <img
@@ -37,19 +37,32 @@ const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "",
 );
 
-const debounce = function (f, ms) {
-  let isCooldown = false;
+function toggleFullScreen() {
+  var doc = window.document;
+  var docEl = doc.documentElement;
 
-  return function () {
-    if (isCooldown) return;
+  var requestFullScreen =
+    docEl.requestFullscreen ||
+    docEl.mozRequestFullScreen ||
+    docEl.webkitRequestFullScreen ||
+    docEl.msRequestFullscreen;
+  var cancelFullScreen =
+    doc.exitFullscreen ||
+    doc.mozCancelFullScreen ||
+    doc.webkitExitFullscreen ||
+    doc.msExitFullscreen;
 
-    f.apply(this, arguments);
-
-    isCooldown = true;
-
-    setTimeout(() => (isCooldown = false), ms);
-  };
-};
+  if (
+    !doc.fullscreenElement &&
+    !doc.mozFullScreenElement &&
+    !doc.webkitFullscreenElement &&
+    !doc.msFullscreenElement
+  ) {
+    requestFullScreen.call(docEl);
+  } else {
+    cancelFullScreen.call(doc);
+  }
+}
 
 /* eslint-enable no-unused-vars */
 
@@ -84,6 +97,10 @@ export default {
     dragOff() {
       return false;
     },
+    fullScreenOn() {
+      if (this.element) return;
+      toggleFullScreen();
+    },
     start(e) {
       this.isMous = true;
       this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
@@ -96,7 +113,7 @@ export default {
     move(e) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       if (!this.element || !this.isMous) return;
-      console.log('move');
+      console.log("move");
       console.log(this.isMous);
       this.element.el.style.position = "absolute";
       this.element.el.style.zIndex = 1000;
@@ -148,10 +165,10 @@ export default {
             : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
-        console.log(this.track.length, 'length');
+        console.log(this.track.length, "length");
 
         console.log(endTime - time2, "time");
-     
+
         let xLength, yLength, time;
         xLength = x2 - x1;
         yLength = y2 - y1;
@@ -163,7 +180,7 @@ export default {
 
         if (endTime - time2 < 20) {
           this.element.el.style.transition =
-            "left 500ms ease-out, top 500ms ease-out"; 
+            "left 500ms ease-out, top 500ms ease-out";
           this.element.el.style.left = `${x2 + (xLength * k) / time}px`;
           this.element.el.style.top = `${y2 + (yLength * k) / time}px`;
         } else {
