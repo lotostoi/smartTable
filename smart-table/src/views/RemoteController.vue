@@ -1,7 +1,12 @@
 <template>
   <div class="wrapper" @touchend="drop(img)" @mouseup="drop(img)">
-    <div class="content" @dragstart="dragOff" v-touch:swipe.top="fullScreenOn">
-      <!--   <div class="scroll"></div> -->
+    <div class="scroll"></div>
+    <div
+      class="content"
+      @dragstart="dragOff"
+      v-touch:swipe.top="fullScreenOn"
+      v-touch:swipe.bot="fullScreenOn"
+    >
       <div
         class="img num1"
         v-for="img in content"
@@ -279,5 +284,15 @@ export default {
 .img {
   width: 400px;
   height: 280px;
+}
+.scroll {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 30px;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.13);
+  touch-action: auto;
+  z-index: 1000;
 }
 </style>
