@@ -1,6 +1,7 @@
 <template>
   <div class="wrapper" @touchend="drop(img)" @mouseup="drop(img)">
-    <div class="content" @dragstart="dragOff"  v-touch:swipe.top="fullScreenOn" >
+    <div class="content" @dragstart="dragOff" v-touch:swipe.top="fullScreenOn">
+      <!--   <div class="scroll"></div> -->
       <div
         class="img num1"
         v-for="img in content"
@@ -11,6 +12,7 @@
         :class="{ active: img.active }"
       >
         <img
+          v-if="img.type === 'image'"
           :style="sizePicture"
           :src="img.url"
           class="img"
@@ -24,6 +26,30 @@
           @transitionend="endMove($event, img)"
           :draggable="false"
         />
+        <div
+          class="img"
+          :style="sizePicture"
+          v-if="img.type === 'link'"
+          @mouseup.prevent="drop(img)"
+          @mousedown.prevent="start($event)"
+          @mousemove.prevent="move($event, img)"
+          @touchstart.prevent="start($event)"
+          @touchmove.prevent="move($event, img)"
+          @transitionend.prevent="endMove($event, img)"
+          :draggable="false"
+        >
+          <iframe
+            seamless
+            allowtransparency
+            scrolling="no"
+            :style="sizePicture"
+            :src="img.url"
+            class="iframe"
+            alt="img"
+            :ref="img.ref"
+            :draggable="false"
+          ></iframe>
+        </div>
       </div>
     </div>
   </div>
@@ -34,7 +60,7 @@
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
 const socket = io(
-  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "",
+  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
 
 function toggleFullScreen() {
@@ -159,10 +185,13 @@ export default {
       const endTime = new Date();
 
       if (this.track.length) {
-        let { x: x1, y: y1, time: time1 } =
-          this.track.length > 20
-            ? this.track[this.track.length - 10]
-            : this.track[0];
+        let {
+          x: x1,
+          y: y1,
+          time: time1,
+        } = this.track.length > 20
+          ? this.track[this.track.length - 10]
+          : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
         console.log(this.track.length, "length");
@@ -221,7 +250,7 @@ export default {
 
 .content {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   background-color: black;
   position: relative;
   display: flex;
@@ -229,14 +258,20 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   box-sizing: border-box;
-  overflow: hidden;
+  // overflow: hidden;
   border: 3px solid transparent;
   touch-action: none;
   & > .img {
     width: 400px;
     height: 280px;
     margin: 10px;
+    & > .img {
+      & > .iframe {
+        pointer-events: none;
+      }
+    }
   }
+
   & > .active {
     border: 2px solid white;
   }

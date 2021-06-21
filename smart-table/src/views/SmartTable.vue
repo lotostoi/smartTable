@@ -7,8 +7,9 @@
       enter-active-class="enter"
       mode="out-in"
     >
-      <div v-if="item.id === id">
-        <img :src="item.url" alt="img" />
+      <div v-show="item.id === id">
+        <img v-show="item.type === 'image'" :src="item.url" alt="img" class="img"/>
+        <iframe v-show="item.type === 'link'" :src="item.url" alt="img" class="img" />
       </div>
     </transition-group>
   </div>
@@ -17,7 +18,9 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io(process.env.NODE_ENV ==='development' ? "http://localhost:3000/" : "");
+const socket = io(
+  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
+);
 /* eslint-enable no-unused-vars */
 
 export default {
@@ -86,6 +89,10 @@ export default {
     z-index: 10;
   }
   & > div > img {
+    height: 100vh;
+    width: 100vw;
+  }
+  & > div > iframe {
     height: 100vh;
     width: 100vw;
   }
