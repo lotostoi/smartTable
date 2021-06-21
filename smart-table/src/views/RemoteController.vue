@@ -1,20 +1,16 @@
 <template>
-  <div class="wrapper" @touchend="drop(img)" @mouseup="drop(img)">
+  <div class="wrapper">
     <div class="scroll"></div>
+    <div class="content">
+     
     <div
-      class="content"
-      @dragstart="dragOff"
-      v-touch:swipe.top="fullScreenOn"
-      v-touch:swipe.bot="fullScreenOn"
-    >
-      <div
         class="img num1"
         v-for="img in content"
         :key="img.url"
         :style="sizePicture"
-        @touchend="drop(img)"
-        @mouseup="drop(img)"
         :class="{ active: img.active }"
+        :draggable="false"
+        style="transform: none;"
       >
         <img
           v-if="img.type === 'image'"
@@ -23,25 +19,16 @@
           class="img"
           alt="img"
           :ref="img.ref"
-          @mouseup="drop(img)"
-          @mousedown="start($event)"
-          @mousemove="move($event, img)"
-          @touchstart="start($event)"
-          @touchmove="move($event, img)"
-          @transitionend="endMove($event, img)"
           :draggable="false"
+          style="transform: none;"
         />
         <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
-          @mouseup.prevent="drop(img)"
-          @mousedown.prevent="start($event)"
-          @mousemove.prevent="move($event, img)"
-          @touchstart.prevent="start($event)"
-          @touchmove.prevent="move($event, img)"
-          @transitionend.prevent="endMove($event, img)"
+          :ref="img.ref"
           :draggable="false"
+          style="transform: none;"
         >
           <iframe
             seamless
@@ -55,7 +42,7 @@
             :draggable="false"
           ></iframe>
         </div>
-      </div>
+      </div> 
     </div>
   </div>
 </template>
@@ -64,6 +51,7 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
+import { styler, value, listen, pointer, spring } from "popmotion";
 const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
@@ -107,116 +95,47 @@ export default {
       endFirstAnim: {},
       isMous: false,
       typeEvent: "touch",
+      itemsConfig: {},
     };
   },
   mounted() {
-    this.dropAreaBottom = (document.documentElement.clientHeight * 15) / 100;
-    const startWidth = (document.documentElement.clientWidth * 25) / 100;
-    this.size = {
-      width: startWidth > 200 ? startWidth : 200,
-      height: (startWidth > 200 ? startWidth : 200) / 1.5,
-    };
+    const items = Object.entries(this.$refs);
+
+    items.forEach((el) => {
+      const [name, newEl] = el;
+      this.itemsConfig[name] = {};
+
+      this.itemsConfig[name].elStyler = styler(newEl);
+      const elStyler = this.itemsConfig[name].elStyler;
+
+      const elXY = (this.itemsConfig[name].elXY = value(
+        { x: 300, y: 200 },
+        elStyler.set
+      ));
+      const startTracking = (this.itemsConfig[name].startTracking = pointer(
+        elXY.get()
+      ).start(elXY));
+      const stopTracking = (this.itemsConfig[name].stopTracking = spring({
+        from: elXY.get(),
+        velocity: elXY.getVelocity(),
+        stiffness: 100,
+        damping: 10,
+      }).start(elXY));
+      listen(newEl, "mousedown touchstart").start(startTracking);
+      listen(document, "mouseup touchend").start(stopTracking);
+    }); 
+
+   
+
+    console.log(this.itemsConfig);
   },
   methods: {
-    getCoords(elem) {
-      let box = elem.getBoundingClientRect();
-      return {
-        top: box.top + pageYOffset,
-        left: box.left + pageXOffset,
-      };
-    },
-    dragOff() {
-      return false;
-    },
     fullScreenOn() {
       if (this.element) return;
       toggleFullScreen();
     },
-    start(e) {
-      this.isMous = true;
-      this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
-      this.element = {};
-      this.element.el = e.target;
-      this.element.x = this.getCoords(this.element.el).left;
-      this.element.y = this.getCoords(this.element.el).top;
-      this.startMove = new Date();
-    },
-    move(e) {
-      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
-      if (!this.element || !this.isMous) return;
-      console.log("move");
-      console.log(this.isMous);
-      this.element.el.style.position = "absolute";
-      this.element.el.style.zIndex = 1000;
-      this.element.el.style.left =
-        event.pageX - this.element.el.offsetWidth / 2 + "px";
-      this.element.el.style.top =
-        event.pageY - this.element.el.offsetHeight / 2 + "px";
-
-      this.track.push({
-        x: event.pageX - this.element.el.offsetWidth / 2,
-        y: event.pageY - this.element.el.offsetHeight / 2,
-        time: new Date(),
-      });
-    },
-    endMove(e, img) {
-      if (e.target.offsetTop + e.target.clientHeight < 0) {
-        socket.emit("change-page", img);
-        this.content.map((el) => {
-          if (el.id == img.id) {
-            el.active = true;
-          } else {
-            el.active = false;
-          }
-        });
-        e.target.style.display = "none";
-        setTimeout(() => {
-          e.target.style.display = "flex";
-        }, 1000);
-      }
-      e.target.style.transition = "left 0ms ease-out, top 0ms ease-out";
-      e.target.style.position = "static";
-
-      this.element = null;
-      this.track = [];
-    },
-    drop() {
-      if (!this.element || !this.isMous) return;
-      this.isMous = false;
-      this.calcRtac();
-    },
-
-    calcRtac() {
-      const endTime = new Date();
-
-      if (this.track.length) {
-        let {
-          x: x1,
-          y: y1,
-          time: time1,
-        } = this.track.length > 20
-          ? this.track[this.track.length - 10]
-          : this.track[0];
-        let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
-
-        let xLength, yLength, time;
-        xLength = x2 - x1;
-        yLength = y2 - y1;
-        time = time2 - time1;
-
-        const k = this.typeEvent === "touch" ? 400 : 200;
-
-        if (endTime - time2 < 20) {
-          this.element.el.style.transition =
-            "left 500ms ease-out, top 500ms ease-out";
-          this.element.el.style.left = `${x2 + (xLength * k) / time}px`;
-          this.element.el.style.top = `${y2 + (yLength * k) / time}px`;
-        } else {
-          this.element.el.style.transition =
-            "left 0ms ease-out, top 0ms ease-out";
-          this.element.el.style.position = "static";
-        }
-      }
+    startTracking(ref) {
+      console.log(this.$refs[ref]);
     },
   },
   computed: {
@@ -259,13 +178,16 @@ export default {
   box-sizing: border-box;
   // overflow: hidden;
   border: 3px solid transparent;
-  touch-action: none;
+  //touch-action: none;
   & > .img {
     width: 400px;
     height: 280px;
     margin: 10px;
     & > .img {
       & > .iframe {
+        pointer-events: none;
+      }
+      & > img {
         pointer-events: none;
       }
     }

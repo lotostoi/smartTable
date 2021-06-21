@@ -10,9 +10,12 @@
     "start": "export NODE_ENV=production&& export NODE_PORT=9090&& nodemon src/server"
   },
   "dependencies": {
+    "@ionic/vue": "^5.6.3",
+    "@ionic/vue-router": "^5.6.3",
     "core-js": "^3.6.5",
     "debounce": "^1.2.1",
     "nodemon": "^2.0.7",
+    "popmotion": "^8.7.0",
     "socket.io": "^4.1.2",
     "socket.io-client": "^4.1.2",
     "vue": "^3.0.0",
