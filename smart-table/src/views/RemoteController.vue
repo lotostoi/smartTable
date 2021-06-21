@@ -2,15 +2,11 @@
   <div class="wrapper">
     <div class="scroll"></div>
     <div class="content">
-     
-    <div
-        class="img num1"
+      <div
+        :ref="img.ref"
         v-for="img in content"
         :key="img.url"
-        :style="sizePicture"
-        :class="{ active: img.active }"
-        :draggable="false"
-        style="transform: none;"
+        style="transform: none"
       >
         <img
           v-if="img.type === 'image'"
@@ -18,17 +14,16 @@
           :src="img.url"
           class="img"
           alt="img"
-          :ref="img.ref"
           :draggable="false"
-          style="transform: none;"
+          style="transform: none"
         />
-        <div
+        <!--       <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
           :ref="img.ref"
           :draggable="false"
-          style="transform: none;"
+          style="transform: none"
         >
           <iframe
             seamless
@@ -41,8 +36,8 @@
             :ref="img.ref"
             :draggable="false"
           ></iframe>
-        </div>
-      </div> 
+        </div> -->
+      </div>
     </div>
   </div>
 </template>
@@ -51,37 +46,11 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
+import { toggleFullScreen } from "@/lib";
 import { styler, value, listen, pointer, spring } from "popmotion";
 const socket = io(
-  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
+  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "",
 );
-
-function toggleFullScreen() {
-  var doc = window.document;
-  var docEl = doc.documentElement;
-
-  var requestFullScreen =
-    docEl.requestFullscreen ||
-    docEl.mozRequestFullScreen ||
-    docEl.webkitRequestFullScreen ||
-    docEl.msRequestFullscreen;
-  var cancelFullScreen =
-    doc.exitFullscreen ||
-    doc.mozCancelFullScreen ||
-    doc.webkitExitFullscreen ||
-    doc.msExitFullscreen;
-
-  if (
-    !doc.fullscreenElement &&
-    !doc.mozFullScreenElement &&
-    !doc.webkitFullscreenElement &&
-    !doc.msFullscreenElement
-  ) {
-    requestFullScreen.call(docEl);
-  } else {
-    cancelFullScreen.call(doc);
-  }
-}
 
 /* eslint-enable no-unused-vars */
 
@@ -102,30 +71,28 @@ export default {
     const items = Object.entries(this.$refs);
 
     items.forEach((el) => {
-      const [name, newEl] = el;
-      this.itemsConfig[name] = {};
+      const item = el[1];
+      const itemStyler = styler(item);
+      const itemXY = value({ x: 0, y: 0 }, itemStyler.set);
 
-      this.itemsConfig[name].elStyler = styler(newEl);
-      const elStyler = this.itemsConfig[name].elStyler;
+      function startTracking() {
+        pointer(itemXY.get()).start(itemXY);
+      }
 
-      const elXY = (this.itemsConfig[name].elXY = value(
-        { x: 300, y: 200 },
-        elStyler.set
-      ));
-      const startTracking = (this.itemsConfig[name].startTracking = pointer(
-        elXY.get()
-      ).start(elXY));
-      const stopTracking = (this.itemsConfig[name].stopTracking = spring({
-        from: elXY.get(),
-        velocity: elXY.getVelocity(),
-        stiffness: 100,
-        damping: 10,
-      }).start(elXY));
-      listen(newEl, "mousedown touchstart").start(startTracking);
+      function stopTracking() {
+        spring({
+          from: itemXY.get(),
+          velocity: itemXY.getVelocity(),
+          stiffness: 200,
+          damping: 10,
+        })
+          .start(itemXY)
+         // .stop(console.log(1));
+      }
+
+      listen(item, "mousedown touchstart").start(startTracking);
       listen(document, "mouseup touchend").start(stopTracking);
-    }); 
-
-   
+    });
 
     console.log(this.itemsConfig);
   },
