@@ -7,9 +7,9 @@
       enter-active-class="enter"
       mode="out-in"
     >
-      <div v-show="item.id === id">
-        <img v-show="item.type === 'image'" :src="item.url" alt="img" class="img"/>
-        <iframe v-show="item.type === 'link'" :src="item.url" alt="img" class="img" />
+      <div v-if="item.id === id">
+        <img v-if="item.type === 'image'" :src="item.url" alt="img" class="img"/>
+        <iframe v-if="item.type === 'link'" :src="item.url" alt="img" class="img" />
       </div>
     </transition-group>
   </div>
