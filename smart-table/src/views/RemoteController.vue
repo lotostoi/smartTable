@@ -199,18 +199,12 @@ export default {
           : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
-        console.log(this.track.length, "length");
-
-        console.log(endTime - time2, "time");
-
         let xLength, yLength, time;
         xLength = x2 - x1;
         yLength = y2 - y1;
         time = time2 - time1;
 
-        console.log(time, "all time");
-
-        const k = this.typeEvent === "touch" ? 100 : 200;
+        const k = this.typeEvent === "touch" ? 400 : 200;
 
         if (endTime - time2 < 20) {
           this.element.el.style.transition =
