@@ -1,20 +1,14 @@
 <template>
-  <div class="wrapper" @touchend="drop(img)" @mouseup="drop(img)">
+  <div class="wrapper">
     <div class="scroll"></div>
-    <div
-      class="content"
-      @dragstart="dragOff"
-      v-touch:swipe.top="fullScreenOn"
-      v-touch:swipe.bot="fullScreenOn"
-    >
+    <div class="content" @dragstart="dragOff">
       <div
         class="img num1"
         v-for="img in content"
         :key="img.url"
         :style="sizePicture"
-        @touchend="drop(img)"
-        @mouseup="drop(img)"
         :class="{ active: img.active }"
+        
       >
         <img
           v-if="img.type === 'image'"
@@ -23,19 +17,15 @@
           class="img"
           alt="img"
           :ref="img.ref"
-          @mouseup="drop(img)"
-          @mousedown="start($event)"
-          @mousemove="move($event, img)"
           @touchstart="start($event)"
           @touchmove="move($event, img)"
           @transitionend="endMove($event, img)"
           :draggable="false"
         />
-        <div
+        <!--  <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
-          @mouseup.prevent="drop(img)"
           @mousedown.prevent="start($event)"
           @mousemove.prevent="move($event, img)"
           @touchstart.prevent="start($event)"
@@ -54,7 +44,7 @@
             :ref="img.ref"
             :draggable="false"
           ></iframe>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -68,32 +58,7 @@ const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
 
-function toggleFullScreen() {
-  var doc = window.document;
-  var docEl = doc.documentElement;
-
-  var requestFullScreen =
-    docEl.requestFullscreen ||
-    docEl.mozRequestFullScreen ||
-    docEl.webkitRequestFullScreen ||
-    docEl.msRequestFullscreen;
-  var cancelFullScreen =
-    doc.exitFullscreen ||
-    doc.mozCancelFullScreen ||
-    doc.webkitExitFullscreen ||
-    doc.msExitFullscreen;
-
-  if (
-    !doc.fullscreenElement &&
-    !doc.mozFullScreenElement &&
-    !doc.webkitFullscreenElement &&
-    !doc.msFullscreenElement
-  ) {
-    requestFullScreen.call(docEl);
-  } else {
-    cancelFullScreen.call(doc);
-  }
-}
+import toggleFullScreen from "@/lib";
 
 /* eslint-enable no-unused-vars */
 
@@ -107,6 +72,8 @@ export default {
       endFirstAnim: {},
       isMous: false,
       typeEvent: "touch",
+      isDublClick: false,
+      lastMomentClick: new Date(),
     };
   },
   mounted() {
@@ -116,8 +83,21 @@ export default {
       width: startWidth > 200 ? startWidth : 200,
       height: (startWidth > 200 ? startWidth : 200) / 1.5,
     };
+    document.addEventListener("touchend", this.drop.bind(this));
+    document.addEventListener("mouseup", this.drop.bind(this));
   },
+  onUnmounted() {
+    document.removeEventListener("touchend", this.drop.bind(this));
+    document.removeEventListener("mouseup", this.drop.bind(this));
+  },
+
   methods: {
+    dubleClick() {
+      const newDateClick = new Date();
+      this.isDublClick = newDateClick - this.lastMomentClick < 300;
+      this.lastMomentClick = newDateClick;
+    },
+
     getCoords(elem) {
       let box = elem.getBoundingClientRect();
       return {
@@ -133,6 +113,7 @@ export default {
       toggleFullScreen();
     },
     start(e) {
+      this.dubleClick();
       this.isMous = true;
       this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
       this.element = {};
@@ -140,12 +121,13 @@ export default {
       this.element.x = this.getCoords(this.element.el).left;
       this.element.y = this.getCoords(this.element.el).top;
       this.startMove = new Date();
+      if (this.isDublClick) {
+        this.setAnim(this.element.x, -500);
+      }
     },
     move(e) {
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       if (!this.element || !this.isMous) return;
-      console.log("move");
-      console.log(this.isMous);
       this.element.el.style.position = "absolute";
       this.element.el.style.zIndex = 1000;
       this.element.el.style.left =
@@ -160,6 +142,7 @@ export default {
       });
     },
     endMove(e, img) {
+      console.log("end-anim");
       if (e.target.offsetTop + e.target.clientHeight < 0) {
         socket.emit("change-page", img);
         this.content.map((el) => {
@@ -174,6 +157,7 @@ export default {
           e.target.style.display = "flex";
         }, 1000);
       }
+
       e.target.style.transition = "left 0ms ease-out, top 0ms ease-out";
       e.target.style.position = "static";
 
@@ -181,12 +165,25 @@ export default {
       this.track = [];
     },
     drop() {
+      console.log(111);
       if (!this.element || !this.isMous) return;
       this.isMous = false;
-      this.calcRtac();
+      this.calcTrac();
     },
 
-    calcRtac() {
+    setAnim(x, y) {
+      this.element.el.style.position = "absolute";
+      this.element.el.style.transition = `left ${400}ms ease-out, top ${400}ms ease-out`;
+      setTimeout(() => {
+        this.element.el.style.left = `${x}px`;
+        this.element.el.style.top = `${y}px`;
+      }, 50);
+    },
+    endAnim({ target }) {
+      target.style.transition = "left 0ms ease-out, top 0ms ease-out";
+      target.style.position = "static";
+    },
+    calcTrac() {
       const endTime = new Date();
 
       if (this.track.length) {
@@ -195,7 +192,7 @@ export default {
           y: y1,
           time: time1,
         } = this.track.length > 20
-          ? this.track[this.track.length - 10]
+          ? this.track[this.track.length - 5]
           : this.track[0];
         let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
 
@@ -207,13 +204,9 @@ export default {
         const k = this.typeEvent === "touch" ? 400 : 200;
 
         if (endTime - time2 < 20) {
-          this.element.el.style.transition =
-            "left 500ms ease-out, top 500ms ease-out";
-          this.element.el.style.left = `${x2 + (xLength * k) / time}px`;
-          this.element.el.style.top = `${y2 + (yLength * k) / time}px`;
+          this.setAnim(x2 + (xLength * k) / time, y2 + (yLength * k) / time);
         } else {
-          this.element.el.style.transition =
-            "left 0ms ease-out, top 0ms ease-out";
+          this.element.el.style.transition = "left 0ms ease-out, top 0ms ease-out";
           this.element.el.style.position = "static";
         }
       }
@@ -283,7 +276,7 @@ export default {
   position: fixed;
   right: 0;
   top: 0;
-  width: 30px;
+  width: 40px;
   height: 100vh;
   background-color: rgba(255, 255, 255, 0.13);
   touch-action: auto;
