@@ -24,7 +24,7 @@
           @scroll.stop.prevent
           :draggable="false"
         />
-        <div
+        <!--  <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
@@ -47,7 +47,7 @@
             :ref="img.ref"
             :draggable="false"
           ></iframe>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -61,7 +61,7 @@ const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
 
-import { toggleFullScreen } from "@/lib";
+import { toggleFullScreen, Spring } from "@/lib";
 
 /* eslint-enable no-unused-vars */
 
@@ -77,6 +77,14 @@ export default {
       typeEvent: "touch",
       isDublClick: false,
       lastMomentClick: new Date(),
+      realX: 0,
+      realY: 0,
+      initialX: 0,
+      initialY: 0,
+      isDragging: false,
+      dragPoints: [],
+      leftSpring: null,
+      topSpring: null,
     };
   },
   mounted() {
@@ -100,7 +108,6 @@ export default {
       this.isDublClick = newDateClick - this.lastMomentClick < 300;
       this.lastMomentClick = newDateClick;
     },
-
     getCoords(elem) {
       let box = elem.getBoundingClientRect();
       return {
@@ -119,15 +126,21 @@ export default {
       }
     },
     start(e, img) {
+      if (this.leftSpring && this.topSpring) {
+        this.leftSpring.stopAnimation();
+        this.topSpring.stopAnimation();
+      } 
+      this.isDragging = true;
       this.dubleClick();
-      this.isMous = true;
       this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
+      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
       this.element = {};
       this.element.typeAnim = null;
       this.element.el = e.target;
-      this.element.x = this.getCoords(this.element.el).left;
-      this.element.y = this.getCoords(this.element.el).top;
-      this.startMove = new Date();
+      this.initialX = event.clientX - this.realX;
+      this.initialY = event.clientY - this.realY;
+
+      //  this.updateImgContainerStyles();
       if (this.isDublClick) {
         this.element.typeAnim = "flyTop";
         this.element.el.style.animation = "fly-top 400ms ease-out";
@@ -143,100 +156,104 @@ export default {
         }, 200);
       }
     },
-    move(e) {
-      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
-      if (!this.element || !this.isMous) return;
-      this.element.el.style.position = "absolute";
-      this.element.el.style.zIndex = 1000;
-      this.element.el.style.left =
-        event.pageX - this.element.el.offsetWidth / 2 + "px";
-      this.element.el.style.top =
-        event.pageY - this.element.el.offsetHeight / 2 + "px";
-
-      this.track.push({
-        x: event.pageX - this.element.el.offsetWidth / 2,
-        y: event.pageY - this.element.el.offsetHeight / 2,
-        time: new Date(),
-      });
+    updateImgContainerStyles() {
+      this.element.el.style.transform = `translate(${this.realX}px, ${this.realY}px)`;
     },
-    endMove(e, img) {
-      if (this.element?.typeAnim === "flyTop") return;
-
-      if (e.target.offsetTop + e.target.clientHeight < 0) {
-        socket.emit("change-page", img);
-        this.content.map((el) => {
-          if (el.id == img.id) {
-            el.active = true;
-          } else {
-            el.active = false;
-          }
-        });
-        e.target.style.display = "none";
-        setTimeout(() => {
-          e.target.style.display = "flex";
-        }, 1000);
-      }
-
-      e.target.style.transition = "left 0ms ease-out, top 0ms ease-out";
-      e.target.style.position = "static";
-
-      this.element = null;
-      this.track = [];
-    },
-    drop() {
-      if (!this.element || !this.isMous) return;
-      this.isMous = false;
-      this.calcTrac();
+    setImgInTheFirstPlace() {
+      this.element.el.style.transform = `translate(${0}px, ${0}px)`;
     },
 
-    setAnim(x, y) {
-      this.element.el.style.position = "absolute";
-      this.element.el.style.transition = `left ${400}ms ease-out, top ${400}ms ease-out`;
-      setTimeout(() => {
-        this.element.el.style.left = `${x}px`;
-        this.element.el.style.top = `${y}px`;
-      }, 50);
-    },
-    endAnim({ target }) {
-      target.style.transition = "left 0ms ease-out, top 0ms ease-out";
-      target.style.position = "static";
-    },
-    calcTrac() {
-      const endTime = new Date();
+    getSpeed(field) {
+      let speedSum = 0;
+      let dividerSum = 0;
 
-      if (this.track.length) {
-        let {
-          x: x1,
-          y: y1,
-          time: time1,
-        } = this.track.length > 20
-          ? this.track[this.track.length - 5]
-          : this.track[0];
-        let { x: x2, y: y2, time: time2 } = this.track[this.track.length - 1];
+      let slicedPoints = this.dragPoints.slice(-17);
 
-        let xLength, yLength, time;
-        xLength = x2 - x1;
-        yLength = y2 - y1;
-        time = time2 - time1;
+      slicedPoints.forEach((point, idx) => {
+        const prevPoint = slicedPoints[idx - 1];
 
-        const k = this.typeEvent === "touch" ? 400 : 200;
-
-        if (endTime - time2 < 20) {
-          this.setAnim(x2 + (xLength * k) / time, y2 + (yLength * k) / time);
-        } else {
-          this.element.el.style.transition =
-            "left 0ms ease-out, top 0ms ease-out";
-          this.element.el.style.position = "static";
+        if (!prevPoint) {
+          return;
         }
-      }
-    },
-    endAnimation() {
 
+        const speed =
+          (point[field] - prevPoint[field]) /
+          ((point.timestamp - prevPoint.timestamp) / 1000);
+        const alpha = 1 / (slicedPoints.length - idx) ** 2;
+
+        speedSum += speed * alpha;
+        dividerSum += alpha;
+      });
+
+      return speedSum / dividerSum;
+    },
+
+    move(e) {
+      if (!this.isDragging) return;
+      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
+      this.realX = event.clientX - this.initialX;
+      this.realY = event.clientY - this.initialY;
+      this.dragPoints.push({
+        x: event.clientX,
+        y: event.clientY,
+        timestamp: performance.now(),
+      });
+      this.updateImgContainerStyles();
+    },
+
+    drop() {
+      if (!this.isDragging) {
+        return;
+      }
+
+      const xSpeed = this.getSpeed("x");
+      const ySpeed = this.getSpeed("y");
+
+      const springConfig = {
+        friction: 2,
+        tension: 5,
+        mass: 0.4,
+      };
+
+      this.leftSpring = new Spring({
+        ...springConfig,
+        realY: this.realY,
+        from: this.realX,
+        to: 0,
+        initVelocity: xSpeed,
+        onUpdate: ({ value }) => {
+          this.realX = value;
+
+          this.updateImgContainerStyles();
+        },
+      });
+
+      this.topSpring = new Spring({
+        ...springConfig,
+        realY: this.realY,
+        axis: "y",
+        initVelocity: ySpeed,
+        from: this.realY,
+        to: 0,
+        onUpdate: ({ value }) => {
+          this.realY = value;
+
+          this.updateImgContainerStyles();
+        },
+      });
+
+      this.leftSpring.startAnimation();
+      this.topSpring.startAnimation();
+
+      this.dragPoints = [];
+      this.isDragging = false;
+    },
+
+    endAnimation() {
       this.element.typeAnim = "flyTop";
       this.element.el.style.animation = "";
-      this.element = null;
+      this.element = {};
     },
-
   },
   computed: {
     ...mapGetters({
