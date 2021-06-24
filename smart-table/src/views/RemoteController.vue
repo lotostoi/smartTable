@@ -1,6 +1,7 @@
 <template>
   <div class="wrapper">
-    <div class="scroll"></div>
+    <!--  <div class="scroll"></div> -->
+    <button class="fulscreen" @touchstart="fullScreenOn"></button>
     <div class="content" @dragstart="dragOff">
       <div
         class="img num1"
@@ -8,7 +9,6 @@
         :key="img.url"
         :style="sizePicture"
         :class="{ active: img.active }"
-        
       >
         <img
           v-if="img.type === 'image'"
@@ -17,20 +17,23 @@
           class="img"
           alt="img"
           :ref="img.ref"
-          @touchstart="start($event)"
+          @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @transitionend="endMove($event, img)"
+          @animationend="endAnimation"
+          @scroll.stop.prevent
           :draggable="false"
         />
-        <!--  <div
+        <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
-          @mousedown.prevent="start($event)"
-          @mousemove.prevent="move($event, img)"
-          @touchstart.prevent="start($event)"
-          @touchmove.prevent="move($event, img)"
-          @transitionend.prevent="endMove($event, img)"
+          @touchstart="start($event, img)"
+          @touchmove="move($event, img)"
+          @transitionend="endMove($event, img)"
+          @animationend="endAnimation"
+          @animationiteration="test"
+          @scroll.stop.prevent
           :draggable="false"
         >
           <iframe
@@ -44,7 +47,7 @@
             :ref="img.ref"
             :draggable="false"
           ></iframe>
-        </div> -->
+        </div>
       </div>
     </div>
   </div>
@@ -58,7 +61,7 @@ const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
 
-import toggleFullScreen from "@/lib";
+import { toggleFullScreen } from "@/lib";
 
 /* eslint-enable no-unused-vars */
 
@@ -109,20 +112,35 @@ export default {
       return false;
     },
     fullScreenOn() {
+      this.dubleClick();
       if (this.element) return;
-      toggleFullScreen();
+      if (this.isDublClick) {
+        toggleFullScreen();
+      }
     },
-    start(e) {
+    start(e, img) {
       this.dubleClick();
       this.isMous = true;
       this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
       this.element = {};
+      this.element.typeAnim = null;
       this.element.el = e.target;
       this.element.x = this.getCoords(this.element.el).left;
       this.element.y = this.getCoords(this.element.el).top;
       this.startMove = new Date();
       if (this.isDublClick) {
-        this.setAnim(this.element.x, -500);
+        this.element.typeAnim = "flyTop";
+        this.element.el.style.animation = "fly-top 400ms ease-out";
+        setTimeout(() => {
+          socket.emit("change-page", img);
+          this.content.map((el) => {
+            if (el.id == img.id) {
+              el.active = true;
+            } else {
+              el.active = false;
+            }
+          });
+        }, 200);
       }
     },
     move(e) {
@@ -142,7 +160,8 @@ export default {
       });
     },
     endMove(e, img) {
-      console.log("end-anim");
+      if (this.element?.typeAnim === "flyTop") return;
+
       if (e.target.offsetTop + e.target.clientHeight < 0) {
         socket.emit("change-page", img);
         this.content.map((el) => {
@@ -165,7 +184,6 @@ export default {
       this.track = [];
     },
     drop() {
-      console.log(111);
       if (!this.element || !this.isMous) return;
       this.isMous = false;
       this.calcTrac();
@@ -206,11 +224,19 @@ export default {
         if (endTime - time2 < 20) {
           this.setAnim(x2 + (xLength * k) / time, y2 + (yLength * k) / time);
         } else {
-          this.element.el.style.transition = "left 0ms ease-out, top 0ms ease-out";
+          this.element.el.style.transition =
+            "left 0ms ease-out, top 0ms ease-out";
           this.element.el.style.position = "static";
         }
       }
     },
+    endAnimation() {
+
+      this.element.typeAnim = "flyTop";
+      this.element.el.style.animation = "";
+      this.element = null;
+    },
+
   },
   computed: {
     ...mapGetters({
@@ -228,7 +254,33 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+.fulscreen {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 50px;
+  height: 50px;
+  z-index: 1000;
+  opacity: 0;
+}
+
+@keyframes fly-top {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(0, -100vh);
+    opacity: 0;
+  }
+  99% {
+    transform: translate(0, -100vh);
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
 .back-video {
   width: 100vw;
   height: 100vh;
@@ -252,11 +304,12 @@ export default {
   box-sizing: border-box;
   // overflow: hidden;
   border: 3px solid transparent;
-  touch-action: none;
+  // touch-action: none;
   & > .img {
     width: 400px;
     height: 280px;
     margin: 10px;
+    touch-action: none;
     & > .img {
       & > .iframe {
         pointer-events: none;

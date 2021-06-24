@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "export NODE_ENV=development&& export NODE_PORT=3000&& vue-cli-service serve",
+    "serve": "set NODE_ENV=development&& set NODE_PORT=3000&& vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "server": "export NODE_ENV=development&& export NODE_PORT=3000&& nodemon src/server",
-    "start": "export NODE_ENV=production&& export NODE_PORT=9090&& nodemon src/server"
+    "server": "set NODE_ENV=development&& set NODE_PORT=3000&& nodemon src/server",
+    "start": "set NODE_ENV=production&& set NODE_PORT=9090&& nodemon src/server"
   },
   "dependencies": {
     "core-js": "^3.6.5",
