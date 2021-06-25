@@ -24,7 +24,7 @@ export function toggleFullScreen() {
 }
 
 export class Spring {
-    constructor({ mass, tension, friction, initVelocity, from, to, onUpdate, axis = null }) {
+    constructor({ mass, tension, friction, initVelocity, from, to, onUpdate, axis = null, onStop = () => { } }) {
         this.mass = mass                 // Масса пружины
         this.tension = tension           // Коэффициент упругости
         this.friction = friction         // Коэффициент трения
@@ -34,6 +34,7 @@ export class Spring {
         this.to = to                     // До какого значения анимировать
         this.onUpdate = onUpdate         // Каллбек, вызывающийся при обновлении значения
         this.axis = axis
+        this.onStop = onStop
     }
 
     startAnimation() {
@@ -51,6 +52,7 @@ export class Spring {
     }
 
     stopAnimation() {
+        console.log('stop')
         const { nextTick } = this
 
         if (nextTick) {
@@ -63,7 +65,7 @@ export class Spring {
     doAnimationTick() {
         const {
             mass, tension, friction, initVelocity, from, to,
-            previousTimestamp, prevVelocity, prevValue, onUpdate,
+            previousTimestamp, prevVelocity, prevValue, onUpdate, onStop
         } = this
 
         // Считаем Δt
@@ -87,14 +89,9 @@ export class Spring {
 
         // Проверяем анимацию на конец
         const precision = 0.001
-        let isFinished = Math.abs(newVelocity) < precision
+        let isFinished = onStop() ? onStop() : Math.abs(newVelocity) < precision
             && Math.abs(newValue - to) < precision
 
-        if (this.axis === 'y') {
-            if (Math.abs(newValue) > 500) {
-                isFinished = true
-            }
-        }
 
         onUpdate({ value: newValue, isFinished })
 
@@ -102,6 +99,7 @@ export class Spring {
         this.prevValue = newValue
         this.prevVelocity = newVelocity
         this.isFinished = isFinished
+
 
         return isFinished
     }

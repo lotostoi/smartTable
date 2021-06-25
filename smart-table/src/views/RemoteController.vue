@@ -19,20 +19,21 @@
           :ref="img.ref"
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
+          @touchend="drop(img)"
           @transitionend="endMove($event, img)"
-          @animationend="endAnimation"
+          @animationend="endAnimation(img)"
           @scroll.stop.prevent
           :draggable="false"
         />
-        <!--  <div
+        <div
           class="img"
           :style="sizePicture"
           v-if="img.type === 'link'"
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
+          @touchend="drop(img)"
           @transitionend="endMove($event, img)"
-          @animationend="endAnimation"
-          @animationiteration="test"
+          @animationend="endAnimation(img)"
           @scroll.stop.prevent
           :draggable="false"
         >
@@ -47,7 +48,7 @@
             :ref="img.ref"
             :draggable="false"
           ></iframe>
-        </div> -->
+        </div>
       </div>
     </div>
   </div>
@@ -69,11 +70,7 @@ export default {
   data() {
     return {
       element: null,
-      dropAreaBottom: 100,
       size: {},
-      track: [],
-      endFirstAnim: {},
-      isMous: false,
       typeEvent: "touch",
       isDublClick: false,
       lastMomentClick: new Date(),
@@ -85,21 +82,18 @@ export default {
       dragPoints: [],
       leftSpring: null,
       topSpring: null,
+      startX: 0,
+      startY: 0,
+      currentItem: null,
+      items: new Map(),
     };
   },
   mounted() {
-    this.dropAreaBottom = (document.documentElement.clientHeight * 15) / 100;
     const startWidth = (document.documentElement.clientWidth * 25) / 100;
     this.size = {
       width: startWidth > 200 ? startWidth : 200,
       height: (startWidth > 200 ? startWidth : 200) / 1.5,
     };
-    document.addEventListener("touchend", this.drop.bind(this));
-    document.addEventListener("mouseup", this.drop.bind(this));
-  },
-  onUnmounted() {
-    document.removeEventListener("touchend", this.drop.bind(this));
-    document.removeEventListener("mouseup", this.drop.bind(this));
   },
 
   methods: {
@@ -125,49 +119,57 @@ export default {
         toggleFullScreen();
       }
     },
-    start(e, img) {
-      if (this.leftSpring && this.topSpring) {
-        this.leftSpring.stopAnimation();
-        this.topSpring.stopAnimation();
-      } 
-      this.isDragging = true;
-      this.dubleClick();
-      this.typeEvent = e instanceof MouseEvent ? "mous" : "touch";
-      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
-      this.element = {};
-      this.element.typeAnim = null;
-      this.element.el = e.target;
-      this.initialX = event.clientX - this.realX;
-      this.initialY = event.clientY - this.realY;
 
-      //  this.updateImgContainerStyles();
+    start(e, img) {
+      this.dubleClick();
+
+      const item = this.initItem(img);
+
+      if (item.leftSpring && item.topSpring) {
+        item.leftSpring.stopAnimation();
+        item.topSpring.stopAnimation();
+      }
+
+      item.currentItem = img;
+      item.isDragging = true;
+      const event = e instanceof MouseEvent ? e : e.changedTouches[0];
+
+      item.startX = this.getCoords(event.target).left;
+      item.startY = this.getCoords(event.target).top;
+
+      item.domElement = e.target;
+      item.initialX = event.clientX - item.realX;
+      item.initialY = event.clientY - item.realY;
+
       if (this.isDublClick) {
-        this.element.typeAnim = "flyTop";
-        this.element.el.style.animation = "fly-top 400ms ease-out";
+        item.isDragging = false;
+        item.domElement.style.animation = "fly-top 800ms ease-out";
         setTimeout(() => {
-          socket.emit("change-page", img);
+          socket.emit("change-page", item.currentItem);
           this.content.map((el) => {
-            if (el.id == img.id) {
+            if (el.id == item.currentItem.id) {
               el.active = true;
             } else {
               el.active = false;
             }
           });
+          // this.items.delete(img.id);
         }, 200);
       }
     },
-    updateImgContainerStyles() {
-      this.element.el.style.transform = `translate(${this.realX}px, ${this.realY}px)`;
+
+    updateImgContainerStyles({ domElement, realX, realY }) {
+      domElement.style.transform = `translate(${realX}px, ${realY}px)`;
     },
-    setImgInTheFirstPlace() {
-      this.element.el.style.transform = `translate(${0}px, ${0}px)`;
+    setImgInTheFirstPlace({ domElement }) {
+      domElement.style.transform = `translate(${0}px, ${0}px)`;
     },
 
-    getSpeed(field) {
+    getSpeed(item, field) {
       let speedSum = 0;
       let dividerSum = 0;
 
-      let slicedPoints = this.dragPoints.slice(-17);
+      let slicedPoints = item.dragPoints.slice(-17);
 
       slicedPoints.forEach((point, idx) => {
         const prevPoint = slicedPoints[idx - 1];
@@ -188,26 +190,28 @@ export default {
       return speedSum / dividerSum;
     },
 
-    move(e) {
-      if (!this.isDragging) return;
+    move(e, { id }) {
+      const item = this.items.get(id);
+      if (!item.isDragging) return;
       const event = e instanceof MouseEvent ? e : e.changedTouches[0];
-      this.realX = event.clientX - this.initialX;
-      this.realY = event.clientY - this.initialY;
-      this.dragPoints.push({
+      item.realX = event.clientX - item.initialX;
+      item.realY = event.clientY - item.initialY;
+      item.dragPoints.push({
         x: event.clientX,
         y: event.clientY,
         timestamp: performance.now(),
       });
-      this.updateImgContainerStyles();
+      this.updateImgContainerStyles(item);
     },
 
-    drop() {
-      if (!this.isDragging) {
+    drop({ id }) {
+      const item = this.items.get(id);
+      if (!item.isDragging) {
         return;
       }
 
-      const xSpeed = this.getSpeed("x");
-      const ySpeed = this.getSpeed("y");
+      const xSpeed = this.getSpeed(item, "x");
+      const ySpeed = this.getSpeed(item, "y");
 
       const springConfig = {
         friction: 2,
@@ -215,44 +219,92 @@ export default {
         mass: 0.4,
       };
 
-      this.leftSpring = new Spring({
+      item.leftSpring = new Spring({
         ...springConfig,
-        realY: this.realY,
-        from: this.realX,
+        from: item.realX,
         to: 0,
         initVelocity: xSpeed,
+        onStop: () => this.stop(item),
         onUpdate: ({ value }) => {
-          this.realX = value;
-
-          this.updateImgContainerStyles();
+          item.realX = value;
+          this.updateImgContainerStyles(item);
         },
       });
 
-      this.topSpring = new Spring({
+      item.topSpring = new Spring({
         ...springConfig,
-        realY: this.realY,
-        axis: "y",
+        realY: item.realY,
         initVelocity: ySpeed,
-        from: this.realY,
+        from: item.realY,
         to: 0,
+        onStop: () => this.stop(item, "y"),
         onUpdate: ({ value }) => {
-          this.realY = value;
-
-          this.updateImgContainerStyles();
+          item.realY = value;
+          this.updateImgContainerStyles(item);
         },
       });
 
-      this.leftSpring.startAnimation();
-      this.topSpring.startAnimation();
-
-      this.dragPoints = [];
-      this.isDragging = false;
+      item.leftSpring.startAnimation();
+      item.topSpring.startAnimation();
+      item.dragPoints = [];
+      item.isDragging = false;
+      // this.items.delete(id);
     },
 
-    endAnimation() {
-      this.element.typeAnim = "flyTop";
-      this.element.el.style.animation = "";
-      this.element = {};
+    endAnimation({ id }) {
+      const { domElement } = this.items.get(id);
+      domElement.style.animation = "";
+      this.items.delete(id);
+    },
+
+    stop(item = {}, axis = "x") {
+      if (item.realY < -item.startY - item.domElement.offsetHeight) {
+        if (axis === "y") {
+          setTimeout(() => {
+            this.setImgInTheFirstPlace(item);
+            item.realX = 0;
+            item.realY = 0;
+            item.initialX = 0;
+            item.initialY = 0;
+            item.startX = 0;
+            item.startY = 0;
+            socket.emit("change-page", item.currentItem);
+            this.content.map((el) => {
+              if (el.id == item.currentItem.id) {
+                el.active = true;
+              } else {
+                el.active = false;
+              }
+            });
+
+            item.dragPoints = [];
+            item.isDragging = false;
+            // this.items.delete(item.currentItem.id);
+          }, 700);
+        }
+        return true;
+      } else {
+        return false;
+      }
+    },
+    initItem({ id }) {
+      const defaultItem = {
+        domElement: null,
+        realX: 0,
+        realY: 0,
+        initialX: 0,
+        initialY: 0,
+        isDragging: false,
+        dragPoints: [],
+        leftSpring: null,
+        topSpring: null,
+        startX: 0,
+        startY: 0,
+        currentItem: null,
+      };
+      if (this.items.has(id)) return this.items.get(id);
+      this.items.set(id, defaultItem);
+      return this.items.get(id);
     },
   },
   computed: {
@@ -263,9 +315,6 @@ export default {
       return (
         "width: " + this.size.width + "px; height: " + this.size.height + "px;"
       );
-    },
-    heightDropArea() {
-      return "padding-top: " + this.dropAreaBottom + "px;";
     },
   },
 };
@@ -288,10 +337,10 @@ export default {
   }
   50% {
     transform: translate(0, -100vh);
-    opacity: 0;
   }
   99% {
     transform: translate(0, -100vh);
+    opacity: 0;
   }
   100% {
     transform: translate(0, 0);
