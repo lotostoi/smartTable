@@ -1,4 +1,4 @@
-export function toggleFullScreen() {
+export function toggleFullScreen () {
     var doc = window.document
     var docEl = doc.documentElement
     var requestFullScreen =

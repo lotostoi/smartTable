@@ -8,38 +8,61 @@
       mode="out-in"
     >
       <div v-if="item.id === id">
-        <img v-if="item.type === 'image'" :src="item.url" alt="img" class="img"/>
-        <iframe v-if="item.type === 'link'" :src="item.url" alt="img" class="img" />
+        <img
+          v-if="item.type === 'image'"
+          :src="item.url"
+          alt="img"
+          class="img"
+        />
+        <iframe
+          v-if="item.type === 'link'"
+          :src="item.url"
+          alt="img"
+          class="img"
+        />
+        <video
+          v-if="item.type === 'video'"
+          :src="item.url"
+          alt="img"
+          class="img"
+          :poster="item.urlForPicture"
+          controls
+          autoplay
+          muted
+          preload="auto"
+          loop
+        >
+          <source :src="item.url" />
+        </video>
       </div>
     </transition-group>
   </div>
 </template>
 <script>
-/* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
 const socket = io(
   process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
 );
-/* eslint-enable no-unused-vars */
 
 export default {
   data() {
     return {
-      id: 1,
+      id: "i1",
     };
-  },
-  mounted() {
-    socket.on("show-next-page", ({ id }) => (this.id = id));
   },
   computed: {
     ...mapGetters({
       content: "content/getContent",
     }),
   },
+  mounted() {
+    socket.on("show-next-page", ({ id }) => (this.id = id));
+    console.log(this.content);
+  },
 };
 </script>
-<style lang="scss" >
+<style lang="scss">
 @keyframes leave-page {
   from {
     z-index: 100;
@@ -96,6 +119,9 @@ export default {
     height: 100vh;
     width: 100vw;
   }
+  & > div > video {
+    height: 100vh;
+    width: 100vw;
+  }
 }
 </style>
-

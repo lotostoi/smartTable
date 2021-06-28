@@ -11,9 +11,9 @@
         :class="{ active: img.active }"
       >
         <img
-          v-if="img.type === 'image'"
+          v-if="img.type === 'image' || img.type === 'video'"
           :style="sizePicture"
-          :src="img.url"
+          :src="img.type === 'image' ? img.url : img.urlForPicture"
           class="img"
           alt="img"
           :ref="img.ref"
@@ -258,7 +258,11 @@ export default {
     },
 
     stop(item = {}, axis = "x") {
-      if (item.realY < -item.startY - item.domElement.offsetHeight) {
+      if (
+        item.realY < -item.startY - item.domElement.offsetHeight ||
+        item.realX < -item.startX - item.domElement.offsetWidth ||
+        item.realX > item.startX + 2 * item.domElement.offsetWidth
+      ) {
         if (axis === "y") {
           setTimeout(() => {
             this.setImgInTheFirstPlace(item);
