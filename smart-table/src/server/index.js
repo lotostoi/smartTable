@@ -25,7 +25,11 @@ io.on("connection", (socket) => {
   // console.log("a user connected");
 });
 
+let updateConfig;
+
 io.sockets.on("connection", function (socket) {
+
+  updateConfig = (data) => io.sockets.emit("update-config", data);
   socket.on("change-page", (data) => {
     io.sockets.emit("show-next-page", data);
   });
@@ -54,6 +58,7 @@ app.put('/api/update-config', (req, res) => {
 
   fs.writeFile(configFile, JSON.stringify(req.body), (err) => {
     if (err) return res.status(501);
+    updateConfig(req.body)
     res.json({ result: true });
   });
 

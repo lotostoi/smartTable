@@ -96,6 +96,12 @@ export default {
       width: startWidth > 200 ? startWidth : 200,
       height: (startWidth > 200 ? startWidth : 200) / 1.5,
     };
+    this.conf = this.config;
+    socket.on("update-config", (config) => {
+      this.conf = config;
+      this.$forceUpdate();
+      this.items.clear();
+    });
   },
   watch: {
     config(newValue) {
@@ -216,9 +222,9 @@ export default {
       }
       const xSpeed = this.getSpeed(item, "x");
       const ySpeed = this.getSpeed(item, "y");
-      console.log(this.config);
+      console.log(this.conf);
       item.leftSpring = new Spring({
-        ...this.config,
+        ...this.conf,
         from: item.realX,
         to: 0,
         initVelocity: xSpeed,
@@ -230,7 +236,7 @@ export default {
       });
 
       item.topSpring = new Spring({
-        ...this.config,
+        ...this.conf,
         realY: item.realY,
         initVelocity: ySpeed,
         from: item.realY,
