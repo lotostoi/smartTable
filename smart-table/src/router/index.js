@@ -1,7 +1,7 @@
-import { createRouter, createWebHistory } from "vue-router"
-import RemoteController from "../views/RemoteController.vue"
-import SmartTable from "../views/SmartTable.vue"
-
+import { createRouter, createWebHistory } from "vue-router";
+import RemoteController from "../views/RemoteController.vue";
+import SmartTable from "../views/SmartTable.vue";
+import ConfigPage from "../views/Config.vue";
 
 const routes = [
   {
@@ -10,16 +10,20 @@ const routes = [
     component: RemoteController,
   },
   {
-    path: "/table",
+    path: "/table/:aminType",
     name: "table",
     component: SmartTable,
   },
-
-]
+  {
+    path: "/config",
+    name: "config",
+    component: ConfigPage,
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
-})
+});
 
-export default router
+export default router;

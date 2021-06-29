@@ -1,43 +1,45 @@
+// eslint-disable-next-line
 <template>
   <div class="wrapper">
     <!--  <div class="scroll"></div> -->
-    <button class="fulscreen" @touchstart="fullScreenOn"></button>
+    <button class="fulscreen" @touchstart="fullScreenOn" />
     <div class="content" @dragstart="dragOff">
       <div
-        class="img num1"
         v-for="img in content"
         :key="img.url"
+        class="img num1"
         :style="sizePicture"
         :class="{ active: img.active }"
       >
         <img
           v-if="img.type === 'image' || img.type === 'video'"
+          :ref="img.ref"
           :style="sizePicture"
           :src="img.type === 'image' ? img.url : img.urlForPicture"
           class="img"
           alt="img"
-          :ref="img.ref"
+          :draggable="false"
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
           @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
-          :draggable="false"
         />
         <div
+          v-if="img.type === 'link'"
           class="img"
           :style="sizePicture"
-          v-if="img.type === 'link'"
+          :draggable="false"
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
           @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
-          :draggable="false"
         >
           <iframe
+            :ref="img.ref"
             seamless
             allowtransparency
             scrolling="no"
@@ -45,9 +47,8 @@
             :src="img.url"
             class="iframe"
             alt="img"
-            :ref="img.ref"
             :draggable="false"
-          ></iframe>
+          />
         </div>
       </div>
     </div>
@@ -86,6 +87,7 @@ export default {
       startY: 0,
       currentItem: null,
       items: new Map(),
+      conf: this.config,
     };
   },
   mounted() {
@@ -95,7 +97,11 @@ export default {
       height: (startWidth > 200 ? startWidth : 200) / 1.5,
     };
   },
-
+  watch: {
+    config(newValue) {
+      console.log(newValue);
+    },
+  },
   methods: {
     dubleClick() {
       const newDateClick = new Date();
@@ -153,7 +159,6 @@ export default {
               el.active = false;
             }
           });
-          // this.items.delete(img.id);
         }, 200);
       }
     },
@@ -180,7 +185,7 @@ export default {
 
         const speed =
           (point[field] - prevPoint[field]) /
-          ((point.timestamp - prevPoint.timestamp) / 1000);
+          ((point.timestamp - prevPoint.timestamp) / this.config.speed);
         const alpha = 1 / (slicedPoints.length - idx) ** 2;
 
         speedSum += speed * alpha;
@@ -209,18 +214,11 @@ export default {
       if (!item.isDragging) {
         return;
       }
-
       const xSpeed = this.getSpeed(item, "x");
       const ySpeed = this.getSpeed(item, "y");
-
-      const springConfig = {
-        friction: 2,
-        tension: 5,
-        mass: 0.4,
-      };
-
+      console.log(this.config);
       item.leftSpring = new Spring({
-        ...springConfig,
+        ...this.config,
         from: item.realX,
         to: 0,
         initVelocity: xSpeed,
@@ -232,7 +230,7 @@ export default {
       });
 
       item.topSpring = new Spring({
-        ...springConfig,
+        ...this.config,
         realY: item.realY,
         initVelocity: ySpeed,
         from: item.realY,
@@ -261,7 +259,7 @@ export default {
       if (
         item.realY < -item.startY - item.domElement.offsetHeight ||
         item.realX < -item.startX - item.domElement.offsetWidth ||
-        item.realX > item.startX + 2 * item.domElement.offsetWidth
+        item.realX > item.startX + item.domElement.offsetWidth
       ) {
         if (axis === "y") {
           setTimeout(() => {
@@ -314,6 +312,7 @@ export default {
   computed: {
     ...mapGetters({
       content: "content/getContent",
+      config: "content/getConfig",
     }),
     sizePicture() {
       return (

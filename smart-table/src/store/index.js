@@ -1,5 +1,5 @@
-import { createStore } from "vuex"
-import content from "@/store/content"
+import { createStore } from "vuex";
+import content from "@/store/content";
 
 export default createStore({
   namespaced: true,
@@ -7,6 +7,6 @@ export default createStore({
   mutations: {},
   actions: {},
   modules: {
-    content
+    content,
   },
-})
+});

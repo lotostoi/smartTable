@@ -7,7 +7,7 @@
       enter-active-class="enter"
       mode="out-in"
     >
-      <div v-if="item.id === id">
+      <div v-if="item.id === id" :class="animType">
         <img
           v-if="item.type === 'image'"
           :src="item.url"
@@ -15,20 +15,22 @@
           class="img"
         />
         <iframe
+          :class="animType"
           v-if="item.type === 'link'"
           :src="item.url"
           alt="img"
           class="img"
         />
         <video
+          :class="animType"
           v-if="item.type === 'video'"
+          :ref="item.ref"
           :src="item.url"
           alt="img"
           class="img"
           :poster="item.urlForPicture"
           controls
           autoplay
-          muted
           preload="auto"
           loop
         >
@@ -55,10 +57,24 @@ export default {
     ...mapGetters({
       content: "content/getContent",
     }),
+    animType() {
+      console.log(this.$route.params.aminType);
+      return this.$route.params.aminType === "bot" ||
+        this.$route.params.aminType === "center"
+        ? this.$route.params.aminType
+        : "bot";
+    },
   },
   mounted() {
-    socket.on("show-next-page", ({ id }) => (this.id = id));
-    console.log(this.content);
+    socket.on("show-next-page", ({ id }) => {
+      this.id = id;
+      const currentItem = this.content.find(({ id }) => id === this.id);
+      if (currentItem.type === "video") {
+        setTimeout(() => {
+          this.$refs[currentItem.ref]?.play();
+        }, 10);
+      }
+    });
   },
 };
 </script>
@@ -91,9 +107,19 @@ export default {
 }
 
 .enter {
-  transform-origin: 50% 100% 0;
   z-index: 500;
   animation: enter-page 0.3s linear forwards;
+}
+.enter-center {
+  z-index: 500;
+  animation: enter-page 0.3s linear forwards;
+}
+
+.bot {
+  transform-origin: 50% 100% 0;
+}
+.center {
+  transform-origin: 50% 50% 0;
 }
 
 .smart-table {

@@ -10,8 +10,10 @@
     "start": "set NODE_ENV=production&& set NODE_PORT=9090&& nodemon src/server"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "debounce": "^1.2.1",
+    "multer": "^1.4.2",
     "nodemon": "^2.0.7",
     "socket.io": "^4.1.2",
     "socket.io-client": "^4.1.2",
