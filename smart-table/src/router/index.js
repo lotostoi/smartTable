@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import RemoteController from "../views/RemoteController.vue";
 import SmartTable from "../views/SmartTable.vue";
 import ConfigPage from "../views/Config.vue";
+import AdminPage from "../views/Admin.vue";
 
 const routes = [
   {
@@ -18,6 +19,11 @@ const routes = [
     path: "/config",
     name: "config",
     component: ConfigPage,
+  },
+  {
+    path: "/admin",
+    name: "admin",
+    component: AdminPage,
   },
 ];
 

@@ -1,5 +1,7 @@
 import axios from "axios";
 
+//import { createProject } from "@/api/content";
+
 export default {
   namespaced: true,
   state: {
@@ -55,6 +57,7 @@ export default {
         type: "video",
       },
     ],
+    projects: [],
     config: {
       friction: 2,
       tension: 5,
@@ -63,12 +66,22 @@ export default {
     },
   },
   getters: {
+    getProjects: (state) => state.projects,
     getContent: (state) => state.content,
     getConfig: (state) => state.config,
   },
   mutations: {
     SET_CONFIG(state, config) {
       state.config = { ...config };
+    },
+    SET_POROJECTS(state, projects) {
+      state.projects = projects;
+    },
+    ADD_PROJECT(state, project) {
+      const _project = state.projects.find(({ name }) => name === project.name);
+      if (_project) return;
+      state.projects.push(project);
+      console.log(state.projects);
     },
   },
   actions: {
@@ -88,6 +101,19 @@ export default {
         if (result) {
           await dispatch("getConfig");
         }
+      } catch (e) {
+        console.log(e);
+      }
+    },
+    async addProject({ commit }, project) {
+      try {
+        /*   const { result } = await createProject(project);
+        if (result) { */
+        commit("ADD_PROJECT", project);
+        /*      return true;
+        } else {
+          return false;
+        } */
       } catch (e) {
         console.log(e);
       }
