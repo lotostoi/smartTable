@@ -8,12 +8,7 @@
       mode="out-in"
     >
       <div v-if="item.id === id" :class="animType">
-        <img
-          v-if="item.type === 'image'"
-          :src="item.url"
-          alt="img"
-          class="img"
-        />
+        <img v-if="item.type === 'image'" :src="item.url" alt="img" class="img" />
         <iframe
           :class="animType"
           v-if="item.type === 'link'"
@@ -43,9 +38,7 @@
 <script>
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io(
-  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
-);
+const socket = io(process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "");
 
 export default {
   data() {
@@ -59,8 +52,7 @@ export default {
     }),
     animType() {
       console.log(this.$route.params.aminType);
-      return this.$route.params.aminType === "bot" ||
-        this.$route.params.aminType === "center"
+      return this.$route.params.aminType === "bot" || this.$route.params.aminType === "center"
         ? this.$route.params.aminType
         : "bot";
     },

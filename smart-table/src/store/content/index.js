@@ -69,7 +69,6 @@ export default {
   mutations: {
     SET_CONFIG(state, config) {
       state.config = { ...config };
-      console.log(state.config);
     },
   },
   actions: {

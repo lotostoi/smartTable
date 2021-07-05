@@ -58,7 +58,7 @@ app.put('/api/update-config', (req, res) => {
 
   fs.writeFile(configFile, JSON.stringify(req.body), (err) => {
     if (err) return res.status(501);
-    updateConfig(req.body)
+    io.sockets.emit("update-config", req.body);
     res.json({ result: true });
   });
 

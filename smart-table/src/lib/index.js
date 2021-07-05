@@ -62,7 +62,6 @@ export class Spring {
   }
 
   stopAnimation() {
-    console.log("stop");
     const { nextTick } = this;
 
     if (nextTick) {
@@ -89,8 +88,7 @@ export class Spring {
 
     // Считаем Δt
     const currentTimestamp = performance.now();
-    const deltaT =
-      (currentTimestamp - (previousTimestamp || currentTimestamp)) / 1000;
+    const deltaT = (currentTimestamp - (previousTimestamp || currentTimestamp)) / 1000;
     const normalizedDeltaT = Math.min(deltaT, 0.046);
 
     let prevSafeVelocity = prevVelocity || initVelocity || 0;
@@ -109,8 +107,7 @@ export class Spring {
     const precision = 0.001;
     let isFinished = onStop()
       ? onStop()
-      : Math.abs(newVelocity) < precision &&
-        Math.abs(newValue - to) < precision;
+      : Math.abs(newVelocity) < precision && Math.abs(newValue - to) < precision;
 
     onUpdate({ value: newValue, isFinished });
 

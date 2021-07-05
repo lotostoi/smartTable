@@ -11,21 +11,21 @@
         :style="sizePicture"
         :class="{ active: img.active }"
       >
-        <img
+        <div
           v-if="img.type === 'image' || img.type === 'video'"
-          :ref="img.ref"
           :style="sizePicture"
-          :src="img.type === 'image' ? img.url : img.urlForPicture"
-          class="img"
-          alt="img"
+          :ref="img.ref"
           :draggable="false"
+          class="img"
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
           @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
-        />
+        >
+          <img :src="img.type === 'image' ? img.url : img.urlForPicture" alt="img" />
+        </div>
         <div
           v-if="img.type === 'link'"
           class="img"
@@ -43,7 +43,6 @@
             seamless
             allowtransparency
             scrolling="no"
-            :style="sizePicture"
             :src="img.url"
             class="iframe"
             alt="img"
@@ -59,9 +58,7 @@
 /* eslint-disable no-unused-vars */
 import { mapGetters } from "vuex";
 import { io } from "socket.io-client";
-const socket = io(
-  process.env.NODE_ENV === "development" ? "http://localhost:3000/" : ""
-);
+const socket = io(process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "");
 
 import { toggleFullScreen, Spring } from "@/lib";
 
@@ -87,7 +84,7 @@ export default {
       startY: 0,
       currentItem: null,
       items: new Map(),
-      conf: this.config,
+      newConfig: null,
     };
   },
   mounted() {
@@ -98,13 +95,11 @@ export default {
     };
     this.conf = this.config;
     socket.on("update-config", (config) => {
-      this.conf = config;
-      this.$forceUpdate();
-      this.items.clear();
+      this.newConfig = config;
     });
   },
   watch: {
-    config(newValue) {
+    newConfig(newValue) {
       console.log(newValue);
     },
   },
@@ -117,8 +112,8 @@ export default {
     getCoords(elem) {
       let box = elem.getBoundingClientRect();
       return {
-        top: box.top + pageYOffset,
-        left: box.left + pageXOffset,
+        top: box.top,
+        left: box.left,
       };
     },
     dragOff() {
@@ -152,8 +147,17 @@ export default {
       item.domElement = e.target;
       item.initialX = event.clientX - item.realX;
       item.initialY = event.clientY - item.realY;
+      const newItem =
+        item.domElement.querySelector("img") || item.domElement.querySelector("iframe");
+
+      item.conf = this.conf;
+
+      if (!this.isDublClick) {
+        newItem.classList.add("big-scale");
+      }
 
       if (this.isDublClick) {
+        newItem.classList.remove("big-scale");
         item.isDragging = false;
         item.domElement.style.animation = "fly-top 800ms ease-out";
         setTimeout(() => {
@@ -174,6 +178,10 @@ export default {
     },
     setImgInTheFirstPlace({ domElement }) {
       domElement.style.transform = `translate(${0}px, ${0}px)`;
+      domElement.style.opacity = `1`;
+    },
+    hideImg({ domElement }) {
+      domElement.style.opacity = `0`;
     },
 
     getSpeed(item, field) {
@@ -191,7 +199,7 @@ export default {
 
         const speed =
           (point[field] - prevPoint[field]) /
-          ((point.timestamp - prevPoint.timestamp) / this.config.speed);
+          ((point.timestamp - prevPoint.timestamp) / item.conf.speed);
         const alpha = 1 / (slicedPoints.length - idx) ** 2;
 
         speedSum += speed * alpha;
@@ -220,11 +228,13 @@ export default {
       if (!item.isDragging) {
         return;
       }
+      const newItem =
+        item.domElement.querySelector("img") || item.domElement.querySelector("iframe");
+      newItem.classList.remove("big-scale");
       const xSpeed = this.getSpeed(item, "x");
       const ySpeed = this.getSpeed(item, "y");
-      console.log(this.conf);
       item.leftSpring = new Spring({
-        ...this.conf,
+        ...item.conf,
         from: item.realX,
         to: 0,
         initVelocity: xSpeed,
@@ -236,7 +246,7 @@ export default {
       });
 
       item.topSpring = new Spring({
-        ...this.conf,
+        ...item.conf,
         realY: item.realY,
         initVelocity: ySpeed,
         from: item.realY,
@@ -268,6 +278,7 @@ export default {
         item.realX > item.startX + item.domElement.offsetWidth
       ) {
         if (axis === "y") {
+          this.hideImg(item);
           setTimeout(() => {
             this.setImgInTheFirstPlace(item);
             item.realX = 0;
@@ -284,11 +295,9 @@ export default {
                 el.active = false;
               }
             });
-
             item.dragPoints = [];
             item.isDragging = false;
-            // this.items.delete(item.currentItem.id);
-          }, 700);
+          }, 300);
         }
         return true;
       } else {
@@ -309,6 +318,8 @@ export default {
         startX: 0,
         startY: 0,
         currentItem: null,
+        moved: false,
+        conf: null,
       };
       if (this.items.has(id)) return this.items.get(id);
       this.items.set(id, defaultItem);
@@ -320,10 +331,19 @@ export default {
       content: "content/getContent",
       config: "content/getConfig",
     }),
-    sizePicture() {
+    conf() {
       return (
-        "width: " + this.size.width + "px; height: " + this.size.height + "px;"
+        this.newConfig ||
+        this.config || {
+          friction: 2,
+          tension: 5,
+          mass: 0.4,
+          speed: 1000,
+        }
       );
+    },
+    sizePicture() {
+      return "width: " + this.size.width + "px; height: " + this.size.height + "px;";
     },
   },
 };
@@ -388,8 +408,19 @@ export default {
     & > .img {
       & > .iframe {
         pointer-events: none;
+        width: 100%;
+        height: 100%;
+      }
+      & > img {
+        pointer-events: none;
+        width: 100%;
+        height: 100%;
       }
     }
+  }
+
+  .big-scale {
+    transform: scale(1.15);
   }
 
   & > .active {
