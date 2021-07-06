@@ -3,16 +3,14 @@
     <div v-for="field in fields" :key="field.name">
       <label :for="field.name">{{ field.name }}: </label>
       <input
+        :id="field.name"
+        v-model="field.value"
         type="number"
         :name="field.name"
         :placeholder="field.name"
-        v-model="field.value"
-        :id="field.name"
         step="0.01"
       />
-      <small v-if="field.isValied && startValid" style="color: red">{{
-        field.errorMessege
-      }}</small>
+      <small v-if="field.isValied && startValid" style="color: red">{{ field.errorMessege }}</small>
     </div>
 
     <button :disabled="isDisabled">Save</button>

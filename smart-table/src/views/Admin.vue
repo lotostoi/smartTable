@@ -1,79 +1,54 @@
 <template>
   <div class="wrapper">
-    <h1>Add Project</h1>
+    <h3>All projects</h3>
+    <div class="wrapper-projects">
+      <Project v-for="project in projects" :key="project._id" :project="project" />
+    </div>
+    <h3>Add Project</h3>
     <button @click="showWindowAddProject">Add new project</button>
-    <form v-if="isOpenAddProject" class="add-project">
+    <div v-if="isOpenAddProject" class="add-project">
       <input type="text" name="name" placeholder="input project's name" v-model="project.name" />
       <div class="item" v-for="item in project.content" :key="item.link || item.file">
         <img :src="item.file" alt="img" />
       </div>
-      <div class="wrapper-add-item" v-if="isOpenAddItem">
-        <div class="choose-type">
-          <label for="type-item">Choose item type</label>
-          <select id="type-item" v-model="item.type">
-            <option>image</option>
-            <option>iframe</option>
-            <option>video</option>
-          </select>
-        </div>
-        <input
-          v-if="item.type === 'image' || item.type === 'video'"
-          type="file"
-          name="file"
-          @change="item.file = $event.target.value"
-        />
-        <input
-          v-if="item.type === 'iframe'"
-          type="text"
-          name="link"
-          v-model="item.link"
-          placeholder="Input link to iframe"
-        />
-        <button class="add-item" @click.prevent="addItem">add</button>
-      </div>
-      <button class="add-item" @click.prevent="isOpenAddItem = !isOpenAddItem">
-        {{ !isOpenAddItem ? "add item" : "close" }}
+      <button class="create-project" :disabled="!project.name" @click.prevent="addProject">
+        {{ !isLoad ? "Create new project" : "loading..." }}
       </button>
-      <button
-        class="create-project"
-        :disabled="!project.name || !project.content.length"
-        @click.prevent="$store.dispatch('content/addProject', project)"
-      >
-        Create new project
-      </button>
-    </form>
+    </div>
   </div>
 </template>
 
 <script>
+import { mapGetters } from "vuex";
+import Project from "@/components/project";
 export default {
+  components: { Project },
   data() {
     return {
       isOpenAddProject: false,
-      isOpenAddItem: false,
       project: {
         name: "",
         content: [],
       },
-      item: {
-        type: "image",
-        file: null,
-        link: null,
-      },
     };
+  },
+  computed: {
+    ...mapGetters({
+      isLoad: "content/isLoad",
+      projects: "content/getProjects",
+    }),
   },
   methods: {
     showWindowAddProject() {
       this.isOpenAddProject = !this.isOpenAddProject;
     },
-    addItem() {
-      this.project.content.push({ ...this.item });
-      this.item = {
-        type: "image",
-        file: null,
-        link: null,
+    async addProject() {
+      await this.$store.dispatch("content/addProject", this.project);
+      this.showWindowAddProject();
+      this.projects = {
+        name: "",
+        content: [],
       };
-      this.isOpenAddItem = !this.isOpenAddItem;
     },
   },
 };

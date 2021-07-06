@@ -10,16 +10,16 @@
       <div v-if="item.id === id" :class="animType">
         <img v-if="item.type === 'image'" :src="item.url" alt="img" class="img" />
         <iframe
-          :class="animType"
           v-if="item.type === 'link'"
+          :class="animType"
           :src="item.url"
           alt="img"
           class="img"
         />
         <video
-          :class="animType"
           v-if="item.type === 'video'"
           :ref="item.ref"
+          :class="animType"
           :src="item.url"
           alt="img"
           class="img"

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-//import { createProject } from "@/api/content";
+import api from "@/api/content";
 
 export default {
   namespaced: true,
@@ -64,24 +64,38 @@ export default {
       mass: 0.4,
       speed: 1000,
     },
+    isLoad: false,
   },
   getters: {
     getProjects: (state) => state.projects,
     getContent: (state) => state.content,
     getConfig: (state) => state.config,
+    isLoad: (state) => state.isLoad,
   },
   mutations: {
+    IS_LOAD_OFF(state) {
+      state.isLoad = false;
+      console.log(state.isLoad);
+    },
+    IS_LOAD_ON(state) {
+      state.isLoad = true;
+    },
+
     SET_CONFIG(state, config) {
       state.config = { ...config };
     },
-    SET_POROJECTS(state, projects) {
+    SET_PROJECTS(state, projects) {
       state.projects = projects;
     },
     ADD_PROJECT(state, project) {
       const _project = state.projects.find(({ name }) => name === project.name);
       if (_project) return;
       state.projects.push(project);
-      console.log(state.projects);
+    },
+    REMOVE_PROJECT(state, id) {
+      const idx = state.projects.findIndex(({ _id }) => _id === id);
+      if (idx < 0) return;
+      state.projects.splice(idx, 1);
     },
   },
   actions: {
@@ -105,18 +119,52 @@ export default {
         console.log(e);
       }
     },
+
+    // projects
+    // add/create project
     async addProject({ commit }, project) {
+      commit("IS_LOAD_ON");
       try {
-        /*   const { result } = await createProject(project);
-        if (result) { */
-        commit("ADD_PROJECT", project);
-        /*      return true;
-        } else {
-          return false;
-        } */
+        const { result, projects } = await api.createProject(project);
+        if (result) {
+          commit("SET_PROJECTS", projects);
+        }
       } catch (e) {
         console.log(e);
       }
+      commit("IS_LOAD_OFF");
+    },
+
+    // get all projects
+    async getProjects({ commit }) {
+      try {
+        const { projects } = await api.getProjects();
+        commit("SET_PROJECTS", projects);
+      } catch (e) {
+        console.log(e);
+      }
+    },
+    // remove project by id
+    async removeProject({ commit }, id) {
+      try {
+        await api.removeProjects(id);
+        commit("REMOVE_PROJECT", id);
+      } catch (e) {
+        console.log(e);
+      }
+    },
+    // add item
+    async addItem({ commit }, item) {
+      commit("IS_LOAD_ON");
+      try {
+        const { result, projects } = await api.addItem(item);
+        if (result) {
+          commit("SET_PROJECTS", projects);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+      commit("IS_LOAD_OFF");
     },
   },
 };

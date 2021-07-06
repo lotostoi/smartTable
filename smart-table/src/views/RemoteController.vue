@@ -13,8 +13,8 @@
       >
         <div
           v-if="img.type === 'image' || img.type === 'video'"
-          :style="sizePicture"
           :ref="img.ref"
+          :style="sizePicture"
           :draggable="false"
           class="img"
           @touchstart="start($event, img)"
@@ -87,6 +87,11 @@ export default {
       newConfig: null,
     };
   },
+  watch: {
+    newConfig(newValue) {
+      console.log(newValue);
+    },
+  },
   mounted() {
     const startWidth = (document.documentElement.clientWidth * 25) / 100;
     this.size = {
@@ -97,11 +102,6 @@ export default {
     socket.on("update-config", (config) => {
       this.newConfig = config;
     });
-  },
-  watch: {
-    newConfig(newValue) {
-      console.log(newValue);
-    },
   },
   methods: {
     dubleClick() {
