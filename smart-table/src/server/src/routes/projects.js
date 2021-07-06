@@ -12,27 +12,16 @@ const getFirstFrame = (video, linkToFile) =>
   new Promise((res, rej) => {
     const process = new ffmpeg(video);
     process.then(
-      function (video) {
-        video.fnExtractFrameToJPG(
-          pathToContent,
-          {
-            frame_rate: 1,
-            number: 50,
-            keep_pixel_aspect_ratio: true,
-            keep_aspect_ratio: true,
-            file_name: "test.jpg",
-          },
-          function (error, files) {
-            if (!error) {
-              res(console.log("good"));
-            }
-            rej(console.log("Error: " + error));
-
-          }
-        );
+      function (vid) {
+        vid.addCommand("-ss", "00:03:30");
+        vid.addCommand("-vframes", "1");
+        vid.save(path.join(__dirname, "./../../files/test.jpg"), function (error, file) {
+          if (!error) res(console.log("Video file: " + file));
+ 
+        });
       },
       function (err) {
-        rej("Error: " + err);
+        rej(console.log("Error: " + err));
       }
     );
   });
