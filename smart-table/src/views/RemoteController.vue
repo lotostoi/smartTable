@@ -12,7 +12,7 @@
         :class="{ active: img.active }"
       >
         <div
-          v-if="img.type === 'image' || img.type === 'video'"
+          v-if="img.type === 'image'"
           :ref="img.ref"
           :style="sizePicture"
           :draggable="false"
@@ -24,7 +24,24 @@
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
-          <img :src="img.type === 'image' ? img.url : img.urlForPicture" alt="img" />
+          <img :src="img.url" alt="img" />
+        </div>
+        <div
+          v-if="img.type === 'video'"
+          :ref="img.ref"
+          :style="sizePicture"
+          :draggable="false"
+          class="img"
+          @touchstart="start($event, img)"
+          @touchmove="move($event, img)"
+          @touchend="drop(img)"
+          @transitionend="endMove($event, img)"
+          @animationend="endAnimation(img)"
+          @scroll.stop.prevent
+        >
+          <video alt="img" preload="auto" :ref="img.ref">
+            <source :src="img.url" />
+          </video>
         </div>
         <div
           v-if="img.type === 'link'"
@@ -145,10 +162,13 @@ export default {
       item.startY = this.getCoords(event.target).top;
 
       item.domElement = e.target;
+
       item.initialX = event.clientX - item.realX;
       item.initialY = event.clientY - item.realY;
       const newItem =
-        item.domElement.querySelector("img") || item.domElement.querySelector("iframe");
+        item.domElement.querySelector("img") ||
+        item.domElement.querySelector("iframe") ||
+        item.domElement.querySelector("video");
 
       item.conf = this.conf;
 
@@ -229,7 +249,9 @@ export default {
         return;
       }
       const newItem =
-        item.domElement.querySelector("img") || item.domElement.querySelector("iframe");
+        item.domElement.querySelector("img") ||
+        item.domElement.querySelector("iframe") ||
+        item.domElement.querySelector("video");
       newItem.classList.remove("big-scale");
       const xSpeed = this.getSpeed(item, "x");
       const ySpeed = this.getSpeed(item, "y");
@@ -410,6 +432,15 @@ export default {
         pointer-events: none;
         width: 100%;
         height: 100%;
+      }
+      & > video {
+        pointer-events: none;
+        width: 100%;
+        height: 100%;
+        background-color: rgb(255, 255, 255);
+        & > source {
+          pointer-events: none;
+        }
       }
       & > img {
         pointer-events: none;

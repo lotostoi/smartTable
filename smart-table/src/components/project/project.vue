@@ -9,13 +9,16 @@
     <hr class="line" />
     <h4>Items</h4>
     <p class="items-message" v-if="!project.items.length">This project is empty...</p>
+    <div class="items-lits">
+      <Item v-for="item in project.items" :key="item.id" :item="item" />
+    </div>
     <AddItem :projectId="project._id" />
     <hr class="line" />
     <div class="remove">
       <label for="remove-project"> Are you sure that you want to delete this project? </label>
       <input type="checkbox" id="remove-project" v-model="isComfirmed" />
       <button @click.prevent="removeProject(project._id)" :disabled="!isComfirmed || isLoad">
-        {{ isLoad ? "Remove project" : "Loading..." }}
+        {{ !isLoad ? "Remove project" : "Loading..." }}
       </button>
     </div>
   </div>
@@ -24,8 +27,9 @@
 <script>
 import { mapActions, mapGetters } from "vuex";
 import AddItem from "@/components/add-item";
+import Item from "@/components/item";
 export default {
-  components: { AddItem },
+  components: { AddItem, Item },
   data() {
     return {
       isComfirmed: false,
@@ -93,5 +97,9 @@ h4 {
 .items-message {
   margin: 10px auto;
   padding: 0;
+}
+.items-lits {
+  width: 100%;
+  box-sizing: border-box;
 }
 </style>

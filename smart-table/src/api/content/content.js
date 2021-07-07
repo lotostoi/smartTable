@@ -16,3 +16,11 @@ export const addItem = async ({ file, id, projectId }) => {
   const { data } = await http.post(`add-item/${projectId}/${id}/`, file);
   return data;
 };
+export const updateItem = async ({ file, id, projectId }) => {
+  const { data } = await http.put(`update-item/${projectId}/${id}/`, file);
+  return data;
+};
+export const removeItem = async ({ id, projectId }) => {
+  const { data } = await http.delete(`remove-item/${projectId}/${id}/`);
+  return data;
+};

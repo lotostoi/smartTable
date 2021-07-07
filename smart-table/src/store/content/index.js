@@ -166,5 +166,30 @@ export default {
       }
       commit("IS_LOAD_OFF");
     },
+    // remove item
+    async updateItem({ commit }, item) {
+      commit("IS_LOAD_ON");
+      try {
+        const { result, projects } = await api.updateItem(item);
+        if (result) {
+          commit("SET_PROJECTS", projects);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+      commit("IS_LOAD_OFF");
+    },
+    async removeItem({ commit }, item) {
+      commit("IS_LOAD_ON");
+      try {
+        const { result, projects } = await api.removeItem(item);
+        if (result) {
+          commit("SET_PROJECTS", projects);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+      commit("IS_LOAD_OFF");
+    },
   },
 };

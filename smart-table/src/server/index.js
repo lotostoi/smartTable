@@ -40,10 +40,12 @@ if (!isDevelopment) {
   app.use(history());
   app.use(express.static(path.join(__dirname, "./../../dist")));
 }
-
+app.get("/api/files/:img", (req, res) => {
+  res.sendFile(path.join(__dirname, "files", req.params.img));
+});
 app.use("/", projectRouter);
 
-//app.use(multer().array());
+app.use(multer().array());
 
 app.get("/api/get-config", (req, res) => {
   fs.readFile(configFile, "utf-8", (err, data) => {

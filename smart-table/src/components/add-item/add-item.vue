@@ -16,6 +16,7 @@
         @change="item.file = $event.target.value"
         ref="file"
       />
+
       <input
         v-if="item.type === 'iframe'"
         type="text"
@@ -23,7 +24,11 @@
         v-model="item.link"
         placeholder="Input link to iframe"
       />
-      <button class="add-item" @click.prevent="addNewItem" :disabled="isDisabled">add</button>
+
+      <button class="add-item" v-if="!error" @click.prevent="addNewItem" :disabled="isDisabled">
+        add
+      </button>
+      <small v-if="error">Uncorrect format! </small>
     </div>
     <button class="add-item" @click.prevent="isOpenAddItem = !isOpenAddItem">
       {{ !isOpenAddItem ? "add item" : "close" }}
@@ -55,6 +60,15 @@ export default {
     isDisabled() {
       return !this.item.file && !this.item.link;
     },
+    error() {
+      const item = this.item;
+      return (
+        ((item.type === "image" || item.type === "video") &&
+          item.type === "video" &&
+          /\.(png|gif|jpe|jpg|svg)$/.test(item.file)) ||
+        (item.type === "image" && /\.(mp4|mov)$/.test(item.file))
+      );
+    },
   },
   methods: {
     ...mapActions({
@@ -66,6 +80,7 @@ export default {
       const file = new FormData(this.$el);
       const description = this.item;
       Object.keys(description).forEach((key) => {
+        if (key === "link") return;
         file.append(key, description[key]);
       });
       await this.addItem({ id: uniqid(), projectId: this.projectId, file });
@@ -119,5 +134,9 @@ input {
   & > label {
     margin-right: 10px;
   }
+}
+small {
+  width: 100%;
+  color: red;
 }
 </style>
