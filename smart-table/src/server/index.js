@@ -46,6 +46,7 @@ if (!isDevelopment) {
   app.use(express.static(path.join(__dirname, "./../../dist")));
 }
 app.get("/api/files/:img", (req, res) => {
+  console.log(path.join(__dirname, "files", req.params.img));
   res.sendFile(path.join(__dirname, "files", req.params.img));
 });
 
