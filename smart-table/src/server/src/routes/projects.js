@@ -48,8 +48,49 @@ router.post("/api/add-item/:projectId/:id", upload.single("item"), async (req, r
     project.items.push(item);
     await Project.findByIdAndUpdate(projectId, { $set: { items: project.items } }, { new: true });
     const projects = await Project.find();
-    return res.status(200).json({ result: true, projects });
+    res.status(200).json({ result: true, projects });
+    return req.updateContent()
   } catch (e) {
+    return res.status(501).end();
+  }
+});
+
+router.put("/api/slide-item/:projectId/:id/:direction", async (req, res) => {
+  try {
+    const { id, projectId, direction } = req.params;
+
+    const project = await Project.findById(projectId);
+
+    const { items } = project;
+
+    const indexItem = items.findIndex((item) => item.id === id);
+
+
+    if (direction === "top") {
+      const currentItem = items[indexItem];
+      const topItem = items[indexItem - 1];
+      if (topItem) {
+        items[indexItem] = topItem;
+        items[indexItem - 1] = currentItem;
+      }
+    }
+    if (direction === "bot") {
+      const currentItem = items[indexItem];
+      const topItem = items[indexItem + 1];
+      if (topItem) {
+        items[indexItem] = topItem;
+        items[indexItem + 1] = currentItem;
+      }
+    }
+
+    project.items = items;
+
+    await Project.findByIdAndUpdate(projectId, { $set: { items: project.items } }, { new: true });
+    const projects = await Project.find();
+    res.status(200).json({ result: true, projects });
+    return req.updateContent()
+  } catch (e) {
+    console.log(e);
     return res.status(501).end();
   }
 });
@@ -58,13 +99,13 @@ router.post("/api/add-item/:projectId/:id", upload.single("item"), async (req, r
 router.put("/api/update-item/:projectId/:id", upload.single("item"), async (req, res) => {
   try {
     const { id, projectId } = req.params;
-    const { link } = req.body;
+    const { link, type } = req.body;
     const { fileName } = req;
 
     const project = await Project.findById(projectId);
     const indexItem = project.items.findIndex((item) => item.id === id);
     const oldName = project.items[indexItem].fileName;
-    const type = project.items[indexItem].type;
+    project.items[indexItem].type = type;
     if (fileName) {
       project.items[indexItem].fileName = fileName;
     }
@@ -77,7 +118,8 @@ router.put("/api/update-item/:projectId/:id", upload.single("item"), async (req,
     }
     await Project.findByIdAndUpdate(projectId, { $set: { items: project.items } }, { new: true });
     const projects = await Project.find();
-    return res.status(200).json({ result: true, projects });
+    res.status(200).json({ result: true, projects });
+    return req.updateContent()
   } catch (e) {
     console.log(e);
     return res.status(501).end();
@@ -97,7 +139,8 @@ router.delete("/api/remove-item/:projectId/:id", async (req, res) => {
     project.items.splice(indexItem, 1);
     await Project.findByIdAndUpdate(projectId, { $set: { items: project.items } }, { new: true });
     const projects = await Project.find();
-    return res.status(200).json({ result: true, projects });
+    res.status(200).json({ result: true, projects });
+    return req.updateContent()
   } catch (e) {
     console.log(e);
     return res.status(501).end();
@@ -135,14 +178,14 @@ router.delete("/api/delete-project/:_id", async (req, res) => {
   try {
     const user = await Project.deleteOne({ _id: req.params._id });
     fs.readdir(pathToContent, (err, files) => {
-      if (err) return console.log(err)
-      files.forEach(fileName => {
+      if (err) return console.log(err);
+      files.forEach((fileName) => {
         if (fileName.includes(req.params._id)) {
-          const file = path.join(pathToContent, fileName)
-          fs.unlink(file, err => err && console.log(err))
+          const file = path.join(pathToContent, fileName);
+          fs.unlink(file, (err) => err && console.log(err));
         }
-      })
-    })
+      });
+    });
     if (user) {
       res.status(200).send({ result: true });
     } else {

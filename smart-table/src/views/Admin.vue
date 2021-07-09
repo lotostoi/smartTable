@@ -7,11 +7,17 @@
     <h3>Add Project</h3>
     <button @click="showWindowAddProject">Add new project</button>
     <div v-if="isOpenAddProject" class="add-project">
+      <button class="close" @click.prevent="showWindowAddProject">X</button>
       <input type="text" name="name" placeholder="input project's name" v-model="project.name" />
+      <small v-if="nameIsUse">This name is already busy</small>
       <div class="item" v-for="item in project.content" :key="item.link || item.file">
         <img :src="item.file" alt="img" />
       </div>
-      <button class="create-project" :disabled="!project.name" @click.prevent="addProject">
+      <button
+        class="create-project"
+        :disabled="!project.name || nameIsUse"
+        @click.prevent="addProject"
+      >
         {{ !isLoad ? "Create new project" : "loading..." }}
       </button>
     </div>
@@ -37,6 +43,10 @@ export default {
       isLoad: "content/isLoad",
       projects: "content/getProjects",
     }),
+    nameIsUse() {
+      console.log(this.projects.some(({ name }) => name === this.project.name));
+      return this.projects.some(({ name }) => name === this.project.name);
+    },
   },
   methods: {
     showWindowAddProject() {
@@ -73,6 +83,17 @@ input {
   margin: 20px auto;
   width: 100%;
   max-width: 900px;
+  border: 1px solid gray;
+  border-radius: 10px;
+  margin: 10px auto 30px;
+  padding: 30px;
+  position: relative;
+  & > .close {
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
 }
 .wrapper-add-item {
   padding: 20px 0;
@@ -92,5 +113,9 @@ input {
   & > label {
     margin-right: 10px;
   }
+}
+small {
+  margin: 10px;
+  color: red;
 }
 </style>

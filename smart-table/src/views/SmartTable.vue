@@ -8,11 +8,16 @@
       mode="out-in"
     >
       <div v-if="item.id === id" :class="animType">
-        <img v-if="item.type === 'image'" :src="item.url" alt="img" class="img" />
+        <img
+          v-if="item.type === 'image'"
+          :src="`/api/files/${item.fileName}`"
+          alt="img"
+          class="img"
+        />
         <iframe
-          v-if="item.type === 'link'"
+          v-if="item.type === 'iframe'"
           :class="animType"
-          :src="item.url"
+          :src="item.link"
           alt="img"
           class="img"
         />
@@ -23,13 +28,12 @@
           :src="item.url"
           alt="img"
           class="img"
-          :poster="item.urlForPicture"
           controls
           autoplay
           preload="auto"
           loop
         >
-          <source :src="item.url" />
+          <source :src="`/api/files/${item.fileName}`" />
         </video>
       </div>
     </transition-group>
@@ -43,13 +47,21 @@ const socket = io(process.env.NODE_ENV === "development" ? "http://localhost:300
 export default {
   data() {
     return {
-      id: "i1",
+      id: null,
     };
   },
   computed: {
     ...mapGetters({
-      content: "content/getContent",
+      projects: "content/getProjects",
     }),
+    content() {
+      const projectName = this.$route.params.projectName.trim();
+      const project = this.projects.find(({ name }) => name === projectName);
+      return project ? project.items : [];
+    },
+    startId() {
+      return this.content[0].id;
+    },
     animType() {
       console.log(this.$route.params.aminType);
       return this.$route.params.aminType === "bot" || this.$route.params.aminType === "center"
@@ -58,6 +70,10 @@ export default {
     },
   },
   mounted() {
+    socket.on("update-content", () => {
+      this.$store.dispatch("content/getProjects");
+    });
+    this.id = this.startId;
     socket.on("show-next-page", ({ id }) => {
       this.id = id;
       const currentItem = this.content.find(({ id }) => id === this.id);

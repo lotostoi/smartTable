@@ -10,7 +10,12 @@
     <h4>Items</h4>
     <p class="items-message" v-if="!project.items.length">This project is empty...</p>
     <div class="items-lits">
-      <Item v-for="item in project.items" :key="item.id" :item="item" />
+      <Item
+        v-for="(item, i) in project.items"
+        :slideDisablid="{ top: i === 0, bot: i === project.items.length - 1 }"
+        :key="item.id"
+        :item="item"
+      />
     </div>
     <AddItem :projectId="project._id" />
     <hr class="line" />

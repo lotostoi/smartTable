@@ -13,7 +13,7 @@
       >
         <div
           v-if="img.type === 'image'"
-          :ref="img.ref"
+          :ref="img.projectId"
           :style="sizePicture"
           :draggable="false"
           class="img"
@@ -24,11 +24,11 @@
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
-          <img :src="img.url" alt="img" />
+          <img :src="`/api/files/${img.fileName}`" alt="img" />
         </div>
         <div
           v-if="img.type === 'video'"
-          :ref="img.ref"
+          :ref="img.projectId"
           :style="sizePicture"
           :draggable="false"
           class="img"
@@ -39,12 +39,12 @@
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
-          <video alt="img" preload="auto" :ref="img.ref">
-            <source :src="img.url" />
+          <video alt="img" preload="auto" :ref="img.projectId">
+            <source :src="`/api/files/${img.fileName}`" />
           </video>
         </div>
         <div
-          v-if="img.type === 'link'"
+          v-if="img.type === 'iframe'"
           class="img"
           :style="sizePicture"
           :draggable="false"
@@ -56,11 +56,11 @@
           @scroll.stop.prevent
         >
           <iframe
-            :ref="img.ref"
+            :ref="img.projectId"
             seamless
             allowtransparency
             scrolling="no"
-            :src="img.url"
+            :src="img.link"
             class="iframe"
             alt="img"
             :draggable="false"
@@ -115,7 +115,9 @@ export default {
       width: startWidth > 200 ? startWidth : 200,
       height: (startWidth > 200 ? startWidth : 200) / 1.5,
     };
-    this.conf = this.config;
+    socket.on("update-content", () => {
+      this.$store.dispatch("content/getProjects");
+    });
     socket.on("update-config", (config) => {
       this.newConfig = config;
     });
@@ -350,9 +352,14 @@ export default {
   },
   computed: {
     ...mapGetters({
-      content: "content/getContent",
       config: "content/getConfig",
+      projects: "content/getProjects",
     }),
+    content() {
+      const projectName = this.$route.params.projectName.trim();
+      const project = this.projects.find(({ name }) => name === projectName);
+      return project ? project.items : [];
+    },
     conf() {
       return (
         this.newConfig ||

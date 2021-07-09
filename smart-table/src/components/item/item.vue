@@ -21,29 +21,47 @@
       />
     </div>
     <div class="buttons">
-      <button
-        @click.prevent="
-          $store.dispatch('content/removeItem', { id: item.id, projectId: item.projectId })
-        "
-      >
-        Delete this item
+      <button @click.prevent="slide('top')" :disabled="slideDisablid.top">
+        <i class="fa fa-arrow-up" aria-hidden="true"></i>
       </button>
+      <div class="remove">
+        <input type="checkbox" name="comfirmed" v-model="isComfimed" />
+        <button
+          @click.prevent="
+            $store.dispatch('content/removeItem', { id: item.id, projectId: item.projectId })
+          "
+          :disabled="!isComfimed"
+        >
+          Delete this item
+        </button>
+      </div>
       <p>Update this item</p>
+      <div class="choose-type">
+        <label>Choose item type</label>
+        <select v-model="type" name="type">
+          <option>image</option>
+          <option>iframe</option>
+          <option>video</option>
+        </select>
+      </div>
       <input
-        v-if="item.type === 'image' || item.type === 'video'"
+        v-if="type === 'image' || type === 'video'"
         type="file"
         name="item"
         ref="file"
         @input="file = $event.target.value"
       />
       <input
-        v-if="item.type === 'iframe'"
+        v-if="type === 'iframe'"
         type="text"
         name="link"
         placeholder="Input link to iframe"
         @input="link = $event.target.value"
       />
-      <button @click.prevent="update" :disabled="link && file">save</button>
+      <button @click.prevent="update" :disabled="isDisabled">save</button>
+      <button @click.prevent="slide('bot')" :disabled="slideDisablid.bot">
+        <i class="fa fa-arrow-down" aria-hidden="true"> </i>
+      </button>
     </div>
   </form>
 </template>
@@ -55,25 +73,75 @@ export default {
       type: Object,
       required: true,
     },
-    data() {
-      return {
-        link: null,
-        file: null,
-      };
+    slideDisablid: {
+      type: Object,
+      required: true,
+    },
+  },
+  data() {
+    return {
+      link: null,
+      file: null,
+      type: "",
+      isComfimed: false,
+    };
+  },
+  computed: {
+    isDisabled() {
+      return !this.link && !this.file;
     },
   },
   methods: {
-    update() {
+    async update() {
       this.$store.dispatch("content/updateItem", {
         id: this.item.id,
         projectId: this.item.projectId,
         file: new FormData(this.$el),
       });
+      this.$el.reset();
     },
+    slide(direction) {
+      this.$store.dispatch("content/slideItem", {
+        id: this.item.id,
+        projectId: this.item.projectId,
+        direction,
+      });
+    },
+  },
+  watch: {
+    file() {
+      if (/\.(png|gif|jpe|jpg|jpeg|svg)$/.test(this.file)) {
+        this.type = "image";
+      } else {
+        this.type = "video";
+      }
+    },
+  },
+  mounted() {
+    this.type = this.item.type;
   },
 };
 </script>
 <style lang="scss" scoped>
+.remove {
+  display: flex;
+  align-items: center;
+  & > input {
+    margin-right: 10px;
+  }
+  & > button {
+    cursor: pointer;
+    background-color: red;
+    color: white;
+    border: none;
+    outline: none;
+    border-radius: 3px;
+  }
+  & > button:disabled {
+    background-color: rgb(141, 140, 140);
+    cursor: not-allowed;
+  }
+}
 .wrapper-item {
   display: flex;
   width: 100%;
@@ -104,5 +172,8 @@ export default {
   & > video {
     margin-right: 5px;
   }
+}
+.choose-type {
+  margin: 10px 0;
 }
 </style>

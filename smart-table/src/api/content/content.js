@@ -20,6 +20,10 @@ export const updateItem = async ({ file, id, projectId }) => {
   const { data } = await http.put(`update-item/${projectId}/${id}/`, file);
   return data;
 };
+export const slideItem = async ({ id, projectId, direction }) => {
+  const { data } = await http.put(`slide-item/${projectId}/${id}/${direction}`);
+  return data;
+};
 export const removeItem = async ({ id, projectId }) => {
   const { data } = await http.delete(`remove-item/${projectId}/${id}/`);
   return data;

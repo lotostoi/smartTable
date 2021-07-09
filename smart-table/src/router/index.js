@@ -6,12 +6,12 @@ import AdminPage from "../views/Admin.vue";
 
 const routes = [
   {
-    path: "/",
+    path: "/:projectName",
     name: "RemoteController",
     component: RemoteController,
   },
   {
-    path: "/table/:aminType",
+    path: "/table/:projectName/:aminType",
     name: "table",
     component: SmartTable,
   },

@@ -166,7 +166,7 @@ export default {
       }
       commit("IS_LOAD_OFF");
     },
-    // remove item
+    // update item
     async updateItem({ commit }, item) {
       commit("IS_LOAD_ON");
       try {
@@ -179,6 +179,20 @@ export default {
       }
       commit("IS_LOAD_OFF");
     },
+    // slide item
+    async slideItem({ commit }, item) {
+      commit("IS_LOAD_ON");
+      try {
+        const { result, projects } = await api.slideItem(item);
+        if (result) {
+          commit("SET_PROJECTS", projects);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+      commit("IS_LOAD_OFF");
+    },
+    // remove item
     async removeItem({ commit }, item) {
       commit("IS_LOAD_ON");
       try {

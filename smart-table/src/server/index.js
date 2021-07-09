@@ -36,6 +36,11 @@ io.sockets.on("connection", function (socket) {
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+app.use("**", (req, res, next) => {
+  req.updateContent = () => io.sockets.emit("update-content");
+  next();
+});
+
 if (!isDevelopment) {
   app.use(history());
   app.use(express.static(path.join(__dirname, "./../../dist")));
@@ -43,9 +48,8 @@ if (!isDevelopment) {
 app.get("/api/files/:img", (req, res) => {
   res.sendFile(path.join(__dirname, "files", req.params.img));
 });
-app.use("/", projectRouter);
 
-app.use(multer().array());
+app.use("/", projectRouter);
 
 app.get("/api/get-config", (req, res) => {
   fs.readFile(configFile, "utf-8", (err, data) => {
