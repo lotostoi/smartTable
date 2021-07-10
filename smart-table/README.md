@@ -22,3 +22,12 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+
+db.createUser(
+   {
+     user: "lotos",
+     pwd: passwordPrompt(), 
+     roles: [ "readWrite", "dbAdmin" ]
+   }
+)
