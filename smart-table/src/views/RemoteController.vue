@@ -311,7 +311,7 @@ export default {
             item.initialY = 0;
             item.startX = 0;
             item.startY = 0;
-            socket.emit("change-page", item.currentItem);
+            socket.emit("change-page", data);
             this.content.map((el) => {
               if (el.id == item.currentItem.id) {
                 el.active = true;
@@ -355,6 +355,9 @@ export default {
       config: "content/getConfig",
       projects: "content/getProjects",
     }),
+    projectName() {
+      return this.$route.params.projectName.trim();
+    },
     content() {
       const projectName = this.$route.params.projectName.trim();
       const project = this.projects.find(({ name }) => name === projectName);

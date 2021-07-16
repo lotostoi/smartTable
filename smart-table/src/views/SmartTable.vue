@@ -59,6 +59,9 @@ export default {
       const project = this.projects.find(({ name }) => name === projectName);
       return project ? project.items : [];
     },
+    projectId() {
+      return this.content[0].projectId;
+    },
     startId() {
       return this.content[0].id;
     },
@@ -74,7 +77,8 @@ export default {
       this.$store.dispatch("content/getProjects");
     });
     this.id = this.startId;
-    socket.on("show-next-page", ({ id }) => {
+    socket.on("show-next-page", ({ id, projectId }) => {
+      if (projectId !== this.projectId) return;
       this.id = id;
       const currentItem = this.content.find(({ id }) => id === this.id);
       if (currentItem.type === "video") {

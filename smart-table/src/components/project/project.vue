@@ -5,6 +5,13 @@
     </div>
     <div class="title">
       <strong>Project name: </strong> <span>{{ project.name }}</span>
+      <nav>
+        <router-link :to="`/${project.name}`" target="_blank">Remote Control</router-link>
+        <router-link :to="`/table/${project.name}/canter`" target="_blank"
+          >Tabale Center</router-link
+        >
+        <router-link :to="`/table/${project.name}/bot`" target="_blank">Tabale bottom</router-link>
+      </nav>
     </div>
     <hr class="line" />
     <h4>Items</h4>
@@ -106,5 +113,12 @@ h4 {
 .items-lits {
   width: 100%;
   box-sizing: border-box;
+}
+nav {
+  display: flex;
+  width: 100%;
+  & > a {
+    margin: 0 20px;
+  }
 }
 </style>

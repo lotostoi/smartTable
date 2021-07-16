@@ -29,6 +29,7 @@ io.on("connection", (socket) => {});
 
 io.sockets.on("connection", function (socket) {
   socket.on("change-page", (data) => {
+    console.log(data);
     io.sockets.emit("show-next-page", data);
   });
 });
