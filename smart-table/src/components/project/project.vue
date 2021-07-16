@@ -7,7 +7,7 @@
       <strong>Project name: </strong> <span>{{ project.name }}</span>
       <nav>
         <router-link :to="`/${project.name}`" target="_blank">Remote Control</router-link>
-        <router-link :to="`/table/${project.name}/canter`" target="_blank"
+        <router-link :to="`/table/${project.name}/center`" target="_blank"
           >Tabale Center</router-link
         >
         <router-link :to="`/table/${project.name}/bot`" target="_blank">Tabale bottom</router-link>
