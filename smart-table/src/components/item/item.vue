@@ -58,6 +58,12 @@
         placeholder="Input link to iframe"
         @input="link = $event.target.value"
       />
+      <div v-if="type === 'video'" class="loop">
+        <label>
+          <strong>Loop:</strong>
+          <input v-if="castal" type="checkbox" name="loop" ref="loop" v-model="checked" />
+        </label>
+      </div>
       <button @click.prevent="update" :disabled="isDisabled">save</button>
       <button @click.prevent="slide('bot')" :disabled="slideDisablid.bot">
         <i class="fa fa-arrow-down" aria-hidden="true"> </i>
@@ -80,25 +86,31 @@ export default {
   },
   data() {
     return {
+      checked: true,
+      startLoop: false,
       link: null,
       file: null,
       type: "",
       isComfimed: false,
+      castal: true,
     };
   },
   computed: {
     isDisabled() {
-      return !this.link && !this.file;
+      return !this.link && !this.file && this.checked === this.startLoop;
     },
   },
   methods: {
     async update() {
-      this.$store.dispatch("content/updateItem", {
+      const loopValue = new FormData();
+      loopValue.append("loop", this.checked);
+      await this.$store.dispatch("content/updateItem", {
         id: this.item.id,
         projectId: this.item.projectId,
-        file: new FormData(this.$el),
+        file: this.file ? new FormData(this.$el) : loopValue,
       });
       this.$el.reset();
+      this.file = null;
     },
     slide(direction) {
       this.$store.dispatch("content/slideItem", {
@@ -116,8 +128,17 @@ export default {
         this.type = "video";
       }
     },
+    item() {
+      this.checked = this.startLoop = null;
+      this.checked = this.startLoop = this.item.loop;
+      if (this.checked) {
+        this.castal = false;
+        setTimeout(() => (this.castal = true), 10);
+      }
+    },
   },
   mounted() {
+    this.checked = this.startLoop = this.item.loop;
     this.type = this.item.type;
   },
 };

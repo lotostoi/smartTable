@@ -102,6 +102,7 @@ export default {
       currentItem: null,
       items: new Map(),
       newConfig: null,
+      domElements: [],
     };
   },
   watch: {
@@ -121,6 +122,8 @@ export default {
     socket.on("update-config", (config) => {
       this.newConfig = config;
     });
+
+    this.domElements = document.querySelectorAll("div.img > div.img");
   },
   methods: {
     dubleClick() {
@@ -148,7 +151,6 @@ export default {
 
     start(e, img) {
       this.dubleClick();
-
       const item = this.initItem(img);
 
       if (item.leftSpring && item.topSpring) {
@@ -164,6 +166,14 @@ export default {
       item.startY = this.getCoords(event.target).top;
 
       item.domElement = e.target;
+
+      this.domElements.forEach((el) => {
+        if (el === item.domElement) {
+          el.parentNode.style.zIndex = "1000";
+        } else {
+          el.parentNode.style.zIndex = "100";
+        }
+      });
 
       item.initialX = event.clientX - item.realX;
       item.initialY = event.clientY - item.realY;
@@ -344,6 +354,7 @@ export default {
         currentItem: null,
         moved: false,
         conf: null,
+        zIndex: 100,
       };
       if (this.items.has(id)) return this.items.get(id);
       this.items.set(id, defaultItem);
@@ -431,23 +442,28 @@ export default {
   box-sizing: border-box;
   // overflow: hidden;
   border: 3px solid transparent;
+  position: relative;
   // touch-action: none;
   & > .img {
+    position: relative;
     width: 400px;
     height: 280px;
     margin: 10px;
     touch-action: none;
+    z-index: 100;
     & > .img {
       & > .iframe {
         pointer-events: none;
         width: 100%;
         height: 100%;
+        transition: transform 0.5s;
       }
       & > video {
         pointer-events: none;
         width: 100%;
         height: 100%;
         background-color: rgb(255, 255, 255);
+        transition: transform 0.5s;
         & > source {
           pointer-events: none;
         }
@@ -456,6 +472,7 @@ export default {
         pointer-events: none;
         width: 100%;
         height: 100%;
+        transition: transform 0.5s;
       }
     }
   }

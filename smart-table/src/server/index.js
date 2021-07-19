@@ -29,7 +29,6 @@ io.on("connection", (socket) => {});
 
 io.sockets.on("connection", function (socket) {
   socket.on("change-page", (data) => {
-    console.log(data);
     io.sockets.emit("show-next-page", data);
   });
 });
@@ -47,7 +46,6 @@ if (!isDevelopment) {
   app.use(express.static(path.join(__dirname, "./../../dist")));
 }
 app.get("/api/files/:img", (req, res) => {
-  console.log(path.join(__dirname, "files", req.params.img));
   res.sendFile(path.join(__dirname, "files", req.params.img));
 });
 

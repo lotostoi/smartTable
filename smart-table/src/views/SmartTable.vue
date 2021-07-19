@@ -23,15 +23,14 @@
         />
         <video
           v-if="item.type === 'video'"
-          :ref="item.ref"
+          :ref="item.id"
           :class="animType"
           :src="item.url"
           alt="img"
           class="img"
           controls
-          autoplay
           preload="auto"
-          loop
+          :loop="item.loop || null"
         >
           <source :src="`/api/files/${item.fileName}`" />
         </video>
@@ -72,18 +71,22 @@ export default {
         : "bot";
     },
   },
-  mounted() {
+  async mounted() {
+    await this.$nextTick();
+
     socket.on("update-content", () => {
       this.$store.dispatch("content/getProjects");
     });
     this.id = this.startId;
+
     socket.on("show-next-page", ({ id, projectId }) => {
       if (projectId !== this.projectId) return;
       this.id = id;
       const currentItem = this.content.find(({ id }) => id === this.id);
       if (currentItem.type === "video") {
         setTimeout(() => {
-          this.$refs[currentItem.ref]?.play();
+          console.log(this.$refs);
+          this.$refs[currentItem.id]?.play();
         }, 10);
       }
     });
