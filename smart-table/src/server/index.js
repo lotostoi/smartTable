@@ -7,8 +7,9 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const server = http.createServer(app);
-const multer = require("multer");
-const basicAuth = require("express-basic-auth");
+const TOKEN_SECRET_KEY  = require('./src/config/secret-key')
+const auth = require('./src/routes/auth')
+const jwt = require("jsonwebtoken");
 
 const projectRouter = require("./src/routes/projects");
 
@@ -39,21 +40,36 @@ io.sockets.on("connection", function (socket) {
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+
+
 app.use("**", (req, res, next) => {
   req.updateContent = () => io.sockets.emit("update-content");
   next();
 });
 
 if (!isDevelopment) {
-  console.log(1);
   app.use(history());
   app.use(express.static(path.join(__dirname, "./../../dist")));
 }
 
-app.use(basicAuth({
-  challenge: true,
-  users: { 'lotos': '89242521756' }
-}));
+
+const mustBeAuthorizationRestApi = (req, res, next) => {
+  if (req.params.token) {
+    jwt.verify(req.params.token, TOKEN_SECRET_KEY, (err, data) => {
+      if (err) return next()
+      delete data.password
+      req.user = data
+      next()
+    })
+  } else {
+    next()
+  }
+}
+
+
+app.use('*/:token', mustBeAuthorizationRestApi)
+app.use(auth)
+
 
 app.get("/api/files/:img", (req, res) => {
   res.sendFile(path.join(__dirname, "files", req.params.img));

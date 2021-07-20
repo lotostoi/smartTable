@@ -20,7 +20,6 @@
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
-          @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
@@ -35,7 +34,6 @@
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
-          @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
@@ -51,7 +49,6 @@
           @touchstart="start($event, img)"
           @touchmove="move($event, img)"
           @touchend="drop(img)"
-          @transitionend="endMove($event, img)"
           @animationend="endAnimation(img)"
           @scroll.stop.prevent
         >
@@ -321,7 +318,7 @@ export default {
             item.initialY = 0;
             item.startX = 0;
             item.startY = 0;
-            socket.emit("change-page", data);
+            socket.emit("change-page", item.currentItem);
             this.content.map((el) => {
               if (el.id == item.currentItem.id) {
                 el.active = true;
